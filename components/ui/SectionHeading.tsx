@@ -47,7 +47,7 @@ export function SectionHeading({
         {/* Section kickers sit above a big heading, so they carry more presence
             than the standalone one in the hero: bigger type, longer rule. */}
         <span
-          className={`inline-flex items-center gap-[0.65em] font-mono font-medium uppercase tracking-[0.22em] text-[clamp(0.8rem,0.73rem+0.36vw,1.05rem)] before:h-px before:w-[2.2em] before:bg-current before:opacity-55 before:content-[''] ${
+          className={`inline-flex items-center gap-[0.62em] font-mono font-medium uppercase tracking-[0.22em] text-[clamp(0.8rem,0.73rem+0.36vw,1.05rem)] before:h-px before:w-[2.2em] before:bg-current before:opacity-55 before:content-[''] ${
             tone === "ink" ? "text-pink-deep" : "text-ink-dim"
           }`}
         >
