@@ -1,69 +1,62 @@
-import Image from "next/image";
+import { Nav } from "@/components/sections/Nav";
+import { Hero } from "@/components/sections/Hero";
+import { ReelWall } from "@/components/sections/ReelWall";
+import { WhyUs } from "@/components/sections/WhyUs";
+import { Work } from "@/components/sections/Work";
+import { Pricing } from "@/components/sections/Pricing";
+import { Testimonials } from "@/components/sections/Testimonials";
+import { Faq } from "@/components/sections/Faq";
+import { Footer } from "@/components/sections/Footer";
+
+/* HERO + REEL WALL SPLIT.
+
+   On a laptop the hero and the wall sit side by side; below the breakpoint
+   they stack (hero on top, wall underneath) and the wall flips to horizontal
+   rows — which is just the two children in source order, so there is nothing
+   to declare at that width beyond `relative`.
+
+   Both columns are fractional, so without a ceiling the hero column keeps
+   growing past the headline's 22ch measure: the headline stops at ~960px and
+   the rest of the column becomes dead air between the copy and the wall. The
+   wall has the mirror problem — its cards have no width of their own on
+   desktop, so each stretches to its lane and the three lanes just get wider.
+   Capping at 1800px fixes both at once.
+
+   The trailing 18px is the seam to Why us, and it is ONE number because both
+   sides are wired to it: this padding and Why us's leading padding. Closing
+   only one leaves the other still holding the two apart. */
+const SPLIT =
+  "relative " +
+  "lap:mx-auto lap:grid lap:w-full lap:max-w-[1800px] " +
+  "lap:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lap:items-center " +
+  "lap:gap-[clamp(24px,3vw,48px)] lap:px-[clamp(20px,5vw,64px)] " +
+  "lap:pt-[clamp(96px,9vh,128px)] lap:pb-[18px]";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-lg focus:bg-ink focus:px-4 focus:py-3 focus:text-[0.85rem] focus:text-paper"
+      >
+        Skip to content
+      </a>
+      <Nav />
+
+      <main id="main">
+        <div className={SPLIT}>
+          <Hero />
+          <ReelWall />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <WhyUs />
+        <Work />
+        <Pricing />
+        <Testimonials />
+        <Faq />
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }

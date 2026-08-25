@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================================================
+   LIKELYFAD v2 — flame → pink → violet on warm paper.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+   This file is deliberately the ONLY stylesheet in the project. Everything a
+   utility can express is written as a utility on the element. What is left
+   here is what a utility cannot be:
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+     1. theme tokens — which is what makes `bg-paper`, `text-pink-deep`,
+        `font-display` and the `lap:` / `tab:` / `phone:` breakpoints EXIST as
+        utilities in the first place;
+     2. the two marquee keyframes both reel walls run on;
+     3. four shared gradients and three shadows, as variables, so
+        `bg-[image:var(--grad)]` reads one definition instead of thirty copies
+        of a colour triple;
+     4. `.aura`, the hero wash, and `::selection` — two rules, because there is
+        no utility for either.
+
+   Spacing, sizes and breakpoints are ported 1:1 from v1's 1,402-line
+   stylesheet; the numbers are the same, the place they live is not.
+   ========================================================================== */
+
+@theme {
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
+  --font-sans: var(--font-roboto), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* v1's three real breakpoints, named for the smallest thing that gets them.
+     They are min-widths, so `lap:` reads "961px and up" and a bare utility is
+     what everything below it gets.
+       lap   — hero splits beside the wall, wall goes vertical, pricing card
+               becomes two columns, page cap opens to 1800px
+       tab   — nav links return, FAQ splits into head + list
+       phone — why-us grid goes 2-up, footer CTA goes side by side */
+  --breakpoint-lap: 961px;
+  --breakpoint-tab: 761px;
+  --breakpoint-phone: 561px;
+
+  --color-paper: #fbf9f6;
+  --color-paper-2: #fff7f3;
+  --color-ink: #16141a;
+  --color-ink-soft: #56505c;
+  --color-ink-faint: #6e6876;
+  --color-line: rgba(22, 20, 26, 0.1);
+  --color-rose: #ff6a3d;      /* flame — gradient stop 1 */
+  --color-pink: #f0407f;      /* gradient stop 2, and the hover/focus pink */
+  --color-violet: #8a4fe0;    /* gradient stop 3 */
+  --color-pink-deep: #d81e63; /* the AA-safe pink ink for kickers on paper */
+  --color-noir: #141217;
+  /* The muted ink for dark bands. --ink-soft is tuned for paper and goes
+     invisible on near-black; --pink-deep lands around 3.6:1 there, under the
+     bar for type this small, so kickers on dark use this instead. */
+  --color-ink-dim: #a39fa8;
+  --color-poster: #efe7e1;    /* warm neutral behind a clip that has not loaded */
+
+  /* Marquee lanes. Every track renders its clips TWICE and slides by exactly
+     half its own length, so the frame the animation ends on is pixel-identical
+     to the one it started on — the loop is seamless with no JS driving it. */
+  --animate-lane-y: lane-y 90s linear infinite;
+  --animate-lane-x: lane-x 90s linear infinite;
+
+  @keyframes lane-y {
+    to {
+      transform: translateY(-50%);
+    }
+  }
+  @keyframes lane-x {
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  /* TWO CUTS OF ONE RAMP, ON PURPOSE. --grad is the bright brand ramp: correct
+     on dark surfaces and on filled shapes (buttons, ticks, rules) where it is
+     the background, not the text. Run as TEXT on warm paper its flame stop
+     drops to roughly 2.4:1, so anything on paper reads --grad-ink, a darkened
+     cut of the same ramp that clears AA at body size. */
+  --grad: linear-gradient(100deg, #ff6a3d 0%, #f0407f 52%, #8a4fe0 100%);
+  --grad-ink: linear-gradient(100deg, #e4521f 0%, #d81e63 52%, #7a3fd0 100%);
+
+  /* A straight `paper → transparent` ramp fades its alpha linearly, and the eye
+     reads the point where it lands as a soft-but-visible band. These stops
+     trace a smoothstep instead: they hug full paper at the start, drop through
+     the middle, then tail off flat into nothing, so the meeting point with the
+     page is genuinely invisible. Shared by both edge fades on the reel wall.
+     The channels must track --color-paper (#fbf9f6) — a mismatch shows up as a
+     grey seam. */
+  --fade-stops:
+    rgba(251, 249, 246, 1) 0%, rgba(251, 249, 246, 0.99) 10%,
+    rgba(251, 249, 246, 0.955) 20%, rgba(251, 249, 246, 0.89) 30%,
+    rgba(251, 249, 246, 0.79) 40%, rgba(251, 249, 246, 0.655) 50%,
+    rgba(251, 249, 246, 0.5) 60%, rgba(251, 249, 246, 0.345) 70%,
+    rgba(251, 249, 246, 0.205) 79%, rgba(251, 249, 246, 0.095) 87%,
+    rgba(251, 249, 246, 0.03) 94%, rgba(251, 249, 246, 0) 100%;
+
+  --shadow-sm: 0 1px 2px rgba(22, 20, 26, 0.04), 0 6px 18px rgba(22, 20, 26, 0.05);
+  --shadow: 0 22px 60px -22px rgba(22, 20, 26, 0.24);
+  --shadow-pink: 0 20px 46px -16px rgba(240, 64, 127, 0.45);
+}
+
+/* The hero wash. Three offset radial ramps, each falling off to alpha 0 of its
+   OWN colour — never to `transparent`, which is rgba(0, 0, 0, 0) and would grey
+   the tail into a visible ring. The stops trace a smoothstep rather than a
+   straight line, so the edge where it meets the paper is genuinely invisible
+   and no blur filter is needed to hide a seam. That matters: a blur this wide
+   would re-rasterise every frame the marquee beside it moves. */
+.aura {
+  background:
+    radial-gradient(48% 52% at 30% 36%,
+      rgba(240, 64, 127, 0.2) 0%, rgba(240, 64, 127, 0.194) 15%,
+      rgba(240, 64, 127, 0.174) 30%, rgba(240, 64, 127, 0.14) 45%,
+      rgba(240, 64, 127, 0.096) 60%, rgba(240, 64, 127, 0.06) 72%,
+      rgba(240, 64, 127, 0.028) 84%, rgba(240, 64, 127, 0.01) 93%,
+      rgba(240, 64, 127, 0) 100%),
+    radial-gradient(46% 48% at 8% 66%,
+      rgba(255, 106, 61, 0.16) 0%, rgba(255, 106, 61, 0.155) 15%,
+      rgba(255, 106, 61, 0.139) 30%, rgba(255, 106, 61, 0.112) 45%,
+      rgba(255, 106, 61, 0.077) 60%, rgba(255, 106, 61, 0.048) 72%,
+      rgba(255, 106, 61, 0.022) 84%, rgba(255, 106, 61, 0.008) 93%,
+      rgba(255, 106, 61, 0) 100%),
+    radial-gradient(42% 44% at 46% 64%,
+      rgba(138, 79, 224, 0.11) 0%, rgba(138, 79, 224, 0.107) 15%,
+      rgba(138, 79, 224, 0.096) 30%, rgba(138, 79, 224, 0.077) 45%,
+      rgba(138, 79, 224, 0.053) 60%, rgba(138, 79, 224, 0.033) 72%,
+      rgba(138, 79, 224, 0.015) 84%, rgba(138, 79, 224, 0.006) 93%,
+      rgba(138, 79, 224, 0) 100%);
+}
+
+::selection {
+  background: var(--color-pink);
+  color: #fff;
+}
+
+/* Every focusable thing on the page, including the bare links in the nav and
+   the footer. A per-component utility would leave whatever it was not put on
+   with the UA default, which is exactly the case that matters. */
+:focus-visible {
+  outline: 2px solid var(--color-pink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
