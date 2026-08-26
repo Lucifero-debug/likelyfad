@@ -132,19 +132,19 @@ export function Hero() {
 
         <div
           style={ctas.style}
-          className={`mt-3 flex flex-wrap justify-center gap-4 lap:justify-start ${ctas.className}`}
+          className={`mt-3 flex flex-wrap justify-center gap-2 lap:justify-start ${ctas.className}`}
         >
           <Button contact variant="grad" withArrow>
             {hero.primaryCta}
           </Button>
-          <Button href={hero.secondaryHref} variant="ghost">
+          <Button href={hero.secondaryHref} variant="ghost" className="border border-black">
             {hero.secondaryCta}
           </Button>
         </div>
 
         <p
           style={reassure.style}
-          className={`mt-2 font-mono text-[0.8rem] tracking-[0.03em] text-ink-faint ${reassure.className}`}
+          className={`mt-0 font-mono text-[0.8rem] tracking-[0.03em] text-ink-faint ${reassure.className}`}
         >
           {hero.reassurance}
         </p>

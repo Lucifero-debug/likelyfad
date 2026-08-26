@@ -38,6 +38,19 @@ const LANE_STYLE = [
   { duration: "86s", reverse: false, rest: "lap:scale-[0.94]" },
 ];
 
+/* Deal the wall's window of the library out across lanes. takeReels spreads
+   clips from the same shoot far apart, so three near-identical doctor spots
+   never land in one lane. The work wall's window starts where this one ends,
+   so nothing appears twice on the page.
+
+   Hoisted out of the component because it is pure over module constants. It
+   used to run per render, so the whole union-find-and-sort in reelOrder re-ran
+   on every pause toggle and every lightbox open and close. */
+const PICKS = takeReels(content.reels.videos, 0, LANES * PER_LANE);
+const LANES_OF_PICKS = Array.from({ length: LANES }, (_, i) =>
+  PICKS.slice(i * PER_LANE, (i + 1) * PER_LANE)
+);
+
 /* Written as one string because the card carries a lot of state. `hover:scale`
    appears twice — once bare, once under `lap:` — because the resting scale at
    `lap:` lives inside a media query and would otherwise out-order a bare
@@ -60,15 +73,17 @@ const CARD =
 function Card({
   reel,
   rest,
+  lane,
   onOpen,
   label,
 }: {
   reel: Reel;
   rest: string;
+  lane: string;
   onOpen: () => void;
   label: string;
 }) {
-  const video = useInViewPlay();
+  const video = useInViewPlay(lane);
 
   return (
     /* The positioning box. Hovering raises it over its neighbours, which is
@@ -106,15 +121,6 @@ export function ReelWall() {
   const [active, setActive] = useState<Reel | null>(null);
   const [paused, setPaused] = useState(false);
 
-  /* Deal the wall's window of the library out across lanes. takeReels spreads
-     clips from the same shoot far apart, so three near-identical doctor spots
-     never land in one lane. The work wall's window starts where this one ends,
-     so nothing appears twice on the page. */
-  const picks = takeReels(content.reels.videos, 0, LANES * PER_LANE);
-  const lanes = Array.from({ length: LANES }, (_, i) =>
-    picks.slice(i * PER_LANE, (i + 1) * PER_LANE)
-  );
-
   return (
     <section
       aria-label="Our work"
@@ -124,7 +130,7 @@ export function ReelWall() {
           the entire separator, so the perceived column gap is exactly twice it
           and there is only one number to reason about. */}
       <div className="relative grid w-full gap-0 lap:h-[min(79svh,800px)] lap:grid-cols-3">
-        {lanes.map((lane, li) => (
+        {LANES_OF_PICKS.map((lane, li) => (
           <div
             key={li}
             /* BLOCK vs INLINE padding are deliberately different. Block padding
@@ -151,6 +157,7 @@ export function ReelWall() {
                   key={`${li}-${i}`}
                   reel={clip}
                   rest={LANE_STYLE[li].rest}
+                  lane={`wall-${li}`}
                   onOpen={() => setActive(clip)}
                   label={`Play reel ${li * PER_LANE + (i % PER_LANE) + 1} full size`}
                 />

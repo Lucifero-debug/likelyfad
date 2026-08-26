@@ -11,9 +11,16 @@ type Size = "default" | "compact";
 
    700, not 600: Roboto has no 600, so the browser resolves it up to 700 anyway.
 */
+/* WIDTH ONLY — the border COLOUR belongs to the variant, and every variant must
+   name one. `border-transparent` used to live here, and it silently beat the
+   variants: Tailwind emits `.border-transparent` after `.border-ink` and
+   `.border-line`, all three are single-class selectors of equal specificity, so
+   the last one written to the stylesheet wins no matter what order the classes
+   sit in on the element. The outlined variants were rendering with an invisible
+   border because of it. One border-color utility per button, no exceptions. */
 const BASE =
   "relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full " +
-  "border border-transparent font-sans font-bold tracking-[-0.01em] active:opacity-[0.88] " +
+  "border font-sans font-bold tracking-[-0.01em] active:opacity-[0.88] " +
   "transition-[color,background-color,border-color,box-shadow] duration-[280ms] " +
   "ease-[cubic-bezier(0.22,0.7,0.2,1)]";
 
@@ -34,10 +41,13 @@ const SIZES: Record<Size, string> = {
 
 const VARIANTS: Record<Variant, string> = {
   grad:
-    "bg-[image:var(--grad)] text-white shadow-[0_12px_30px_-12px_rgba(236,72,153,0.6)] " +
-    "hover:shadow-[var(--shadow-pink)]",
-  dark: "bg-ink text-paper hover:shadow-[var(--shadow-pink)]",
-  ghost: "border-line bg-transparent text-ink hover:border-pink hover:text-pink-deep",
+    "border-transparent bg-[image:var(--grad)] text-white " +
+    "shadow-[0_12px_30px_-12px_rgba(236,72,153,0.6)] hover:shadow-[var(--shadow-pink)]",
+  dark: "border-transparent bg-ink text-paper hover:shadow-[var(--shadow-pink)]",
+  /* Full-strength ink rather than the hairline the `light` variant uses: this
+     one sits beside the gradient CTA in the hero and needs enough weight to
+     read as the second half of a pair. */
+  ghost: "border-ink bg-transparent text-ink hover:border-pink hover:text-pink-deep",
   light:
     "border-line bg-white text-ink hover:border-pink hover:text-pink-deep " +
     "hover:shadow-[var(--shadow-sm)]",

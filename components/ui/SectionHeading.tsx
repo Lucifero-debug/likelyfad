@@ -41,7 +41,7 @@ export function SectionHeading({
   return (
     <div
       style={{ "--title": titleSize } as CSSProperties}
-      className={`mx-auto mb-4 max-w-[calc(var(--title)*13)] text-center ${className}`}
+      className={`mx-auto mt-2 mb-4 max-w-[calc(var(--title)*13)] text-center ${className}`}
     >
       <Reveal>
         {/* Section kickers sit above a big heading, so they carry more presence
