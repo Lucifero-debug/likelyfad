@@ -55,6 +55,41 @@ const THRESHOLD = 0.2;
    which is far cheaper than the scroll it buys. */
 const DWELL_MS = 220;
 
+/* How long after the last scroll event the clips are allowed back.
+
+   THE DWELL ABOVE ONLY STOPS TILES STARTING. Everything already running keeps
+   running straight through a scroll — up to twenty-four decoders, each pushing
+   a fresh 288x512 texture to the GPU thirty times a second and compositing as
+   its own layer, landing on precisely the frames the browser needs for the
+   scroll itself. That is the load you feel while moving through the walls, and
+   nothing before this touched it.
+
+   So the whole page stops decoding for the length of the gesture. It is not
+   visible: a paused clip holds its last frame, and a held frame on a tile
+   sliding past under your thumb is indistinguishable from a playing one.
+
+   Only the video stops. The marquee keeps running, deliberately — it is six
+   layers against twenty-four, and a wall that freezes mid-scroll reads as the
+   page having hung, which is the opposite of what this is for. */
+const SCROLL_IDLE_MS = 160;
+
+/* Gap between one clip starting and the next.
+
+   THE MEASUREMENT THAT PUT THIS HERE. Filling the work wall's slots all at once
+   opens twenty-four streams in the same instant, and they split the pipe
+   twenty-four ways. Profiled against the deployed blob store: on a 4Mbps 4G
+   line, seventeen of the twenty-four sat in `playing` with readyState below 3 —
+   running, with nothing buffered to run on — and fired 45 `waiting` events in
+   eight seconds. Even unthrottled it was 37. That stutter IS the lag; the
+   decoders were never the problem, and capping how many play never addressed it
+   because the contention is at the start, not in the steady state.
+
+   Started one at a time, each clip has the whole line to itself for the ~1s it
+   takes to pull 230KB, and a clip that has finished downloading loops out of
+   cache forever after — costing nothing. Twelve staggered starts drain in about
+   three seconds and every one of them plays clean. */
+const START_STAGGER_MS = 260;
+
 type Lane = {
   /* Both are insertion-ordered — a Set iterates in the order things went into
      it, which IS the queue. Nothing else maintains it. */
@@ -69,9 +104,43 @@ type Registry = {
   /* Tiles on screen but still serving their dwell. A plain Map, not a Weak
      one: an entry here owns a live timer that has to be findable to cancel. */
   waiting: Map<HTMLVideoElement, ReturnType<typeof setTimeout>>;
+  /* True for the length of a scroll gesture. `playing` still means "holds a
+     slot" while this is set — the sets are left alone and only the elements
+     are stopped, so the queue survives the gesture and the same tiles resume. */
+  scrolling: boolean;
 };
 
 let registry: Registry | null = null;
+
+/* Clips waiting their turn to start, and the timer walking the queue. One
+   global line, not one per lane: the thing being rationed is the connection,
+   and there is only one of those. */
+const startQueue: HTMLVideoElement[] = [];
+let pump: ReturnType<typeof setInterval> | undefined;
+
+function queueStart(el: HTMLVideoElement) {
+  startQueue.push(el);
+  if (pump) return;
+  pump = setInterval(() => {
+    /* Mid-gesture nothing starts — hold the line rather than draining it, so
+       the queue is still intact when the scroll ends. */
+    if (registry?.scrolling) return;
+
+    const next = startQueue.shift();
+    if (!next) {
+      clearInterval(pump);
+      pump = undefined;
+      return;
+    }
+    /* It may have scrolled away, or lost its slot to something ahead of it,
+       between joining this queue and reaching the front. */
+    const lane = registry?.laneOf.get(next);
+    if (!lane?.playing.has(next)) return;
+    // Rejects under some autoplay policies. The poster stays up in that case,
+    // which is the correct fallback.
+    void next.play().catch(() => {});
+  }, START_STAGGER_MS);
+}
 
 function reconcile(lane: Lane) {
   /* Release BEFORE filling, so a slot freed by a tile leaving is handed out in
@@ -85,11 +154,48 @@ function reconcile(lane: Lane) {
   for (const el of lane.visible) {
     if (lane.playing.size >= PER_LANE) break;
     if (lane.playing.has(el)) continue;
+    /* Takes the slot immediately, starts when the queue reaches it. Holding the
+       slot from here is what stops the next reconcile handing it to someone
+       else while this one is still waiting its turn. */
     lane.playing.add(el);
-    // Rejects under some autoplay policies. The poster stays up in that case,
-    // which is the correct fallback.
-    void el.play().catch(() => {});
+    queueStart(el);
   }
+}
+
+/* Every element currently holding a slot, across every lane. */
+function eachPlaying(r: Registry, fn: (el: HTMLVideoElement) => void) {
+  for (const lane of r.lanes.values()) for (const el of lane.playing) fn(el);
+}
+
+/* One listener for the document, attached with the registry rather than per
+   tile. Passive: this never calls preventDefault, and saying so keeps the
+   handler off the browser's critical path for the gesture. */
+function watchScrolling(r: Registry) {
+  let idle: ReturnType<typeof setTimeout> | undefined;
+  window.addEventListener(
+    "scroll",
+    () => {
+      /* Stop on the FIRST event of a gesture, not on every one — scroll fires
+         far faster than frames, and pausing an already-paused element each
+         time would be its own cost. */
+      if (!r.scrolling) {
+        r.scrolling = true;
+        eachPlaying(r, (el) => el.pause());
+      }
+      clearTimeout(idle);
+      idle = setTimeout(() => {
+        r.scrolling = false;
+        /* Only what was ALREADY running before the gesture. Anything still in
+           the start queue stays there and keeps its turn — resuming the whole
+           set here would open every stream at once and undo the stagger. Those
+           are free to resume together: a clip that has played has its bytes. */
+        eachPlaying(r, (el) => {
+          if (!startQueue.includes(el)) void el.play().catch(() => {});
+        });
+      }, SCROLL_IDLE_MS);
+    },
+    { passive: true }
+  );
 }
 
 function getRegistry(): Registry {
@@ -142,7 +248,8 @@ function getRegistry(): Registry {
     { threshold: THRESHOLD }
   );
 
-  registry = { io, lanes, laneOf, waiting };
+  registry = { io, lanes, laneOf, waiting, scrolling: false };
+  watchScrolling(registry);
   return registry;
 }
 

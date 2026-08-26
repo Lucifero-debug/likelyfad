@@ -139,7 +139,6 @@ function Tile({
             src={reel.poster}
             alt=""
             aria-hidden="true"
-            loading="lazy"
             decoding="async"
             className="absolute inset-0 size-full object-cover"
           />

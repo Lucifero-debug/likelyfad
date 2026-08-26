@@ -98,7 +98,10 @@ export const content = {
 
   pricing: {
     kicker: "Pricing",
-    heading: "Priced to your brief, not a package.",
+    /* Hard break at the comma, and the second half runs gradient — same shape
+       as the FAQ heading. The turn is the point the line makes, so it is set
+       here rather than left to the measure. */
+    heading: "Priced to your brief,\n*not a package.*",
     body: "Every brand's scope is different. Formats, volume, turnaround. Tell us what you need and we'll send a straight number, no fine print. Most brands then move to a monthly retainer sized to how much they test.",
     includes: [
       "A fixed quote before anything starts",
@@ -134,7 +137,11 @@ export const content = {
 
   faq: {
     kicker: "Questions",
-    heading: "The stuff founders ask *before they reach out.*",
+    /* The \n is a hard line break — see RevealText. It splits the heading at
+       the gradient boundary, so the plain half sits on line one and the
+       gradient half on line two rather than wherever the measure happened to
+       put the turn. */
+    heading: "The stuff founders ask\n*before they reach out.*",
     cta: CTA,
     items: [
       {

@@ -36,7 +36,7 @@ export function Pricing() {
       className={`${SECTION} ${ANCHOR} pb-6 text-center`}
     >
       <div className={WRAP}>
-        <SectionHeading kicker={pricing.kicker} heading={pricing.heading} leading="0.9" />
+        <SectionHeading kicker={pricing.kicker} heading={pricing.heading} leading="0.9" measure="16" />
 
         <Reveal delay={120}>
           <div className={`mx-auto max-w-[720px] lap:max-w-[1080px] ${CARD}`}>

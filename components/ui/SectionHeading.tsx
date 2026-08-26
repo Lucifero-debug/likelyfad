@@ -21,11 +21,21 @@ import { RevealText } from "@/components/ui/RevealText";
    to emit them in. An inline style has no such argument to lose. */
 const DEFAULT_TITLE = "clamp(1.9rem, 1.35rem + 4.4vw, 4.6rem)";
 
+/* The measure, in title-em. 13 is the number that makes an UNBROKEN heading
+   turn over two lines at every viewport — see the note above.
+
+   A heading that sets its own break with a \n does not need that and is hurt by
+   it: the measure then has to be wide enough that neither half wraps AGAIN, or
+   the hard break buys a third line instead of fixing the second. Those pass a
+   larger number. */
+const DEFAULT_MEASURE = "13";
+
 export function SectionHeading({
   kicker,
   heading,
   tone = "ink",
   titleSize = DEFAULT_TITLE,
+  measure = DEFAULT_MEASURE,
   leading,
   className = "",
 }: {
@@ -34,14 +44,21 @@ export function SectionHeading({
   /** "bright" on the dark bands, where the paper-safe ramp goes muddy. */
   tone?: "ink" | "bright";
   titleSize?: string;
+  /** Measure in title-em. Widen it for a heading that breaks itself with a \n. */
+  measure?: string;
   /** Overrides the 1.04 the display sizes share. */
   leading?: string;
   className?: string;
 }) {
   return (
     <div
-      style={{ "--title": titleSize } as CSSProperties}
-      className={`mx-auto mt-2 mb-4 max-w-[calc(var(--title)*13)] text-center ${className}`}
+      /* --measure rides in beside --title for the same reason: a section that
+         widened the measure with a second `max-w-` utility would be setting one
+         property from two classes of equal specificity, and the winner would
+         come down to Tailwind's emit order. An inline custom property has no
+         such argument to lose. */
+      style={{ "--title": titleSize, "--measure": measure } as CSSProperties}
+      className={`mx-auto mt-2 mb-4 max-w-[calc(var(--title)*var(--measure))] text-center ${className}`}
     >
       <Reveal>
         {/* Section kickers sit above a big heading, so they carry more presence
@@ -58,12 +75,25 @@ export function SectionHeading({
           does nothing on a non-replaced inline element, and this h2 is inline.
           The gap under the kicker is line-box height, not margin. Give the h2 a
           block wrapper if you ever want that 12px back. */}
+      {/* A heading that sets its own break with a \n must NOT be balanced. The
+          two are the same decision made by different parties: `balance` evens
+          the lines by choosing where they turn, which is precisely the choice
+          the \n took away from it. Left on, it goes looking for a second break
+          to even out the short line the author just made, and splits a half
+          that would otherwise have fit — the hard break buys a third line
+          rather than fixing the second.
+
+          `text-pretty` and `text-balance` are one property written two ways, so
+          this is a swap rather than an override: two classes both setting
+          text-wrap would have their winner decided by Tailwind's emit order. */}
       <RevealText
         as="h2"
         tone={tone}
         text={heading}
         style={leading ? { lineHeight: leading } : undefined}
-        className="mt-3 text-balance font-display text-(length:--title) font-bold leading-[1.04] tracking-[-0.022em]"
+        className={`mt-3 ${
+          heading.includes("\n") ? "text-pretty" : "text-balance"
+        } font-display text-(length:--title) font-bold leading-[1.04] tracking-[-0.022em]`}
       />
     </div>
   );

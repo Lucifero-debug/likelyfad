@@ -131,6 +131,17 @@ export function RevealText({
     <Tag ref={ref} style={style} className={`inline ${className}`}>
       {tokens.map((t, i) => {
         if (/\s+/.test(t.word)) {
+          /* A newline in the source is a HARD break, not a space. It is the one
+             way to say where a heading divides — `text-balance` picks its own
+             break point from the measure, which is right for most of these and
+             wrong when the split carries meaning, as it does wherever the plain
+             half and the gradient half are meant to sit on separate lines.
+
+             It stays in the copy rather than becoming a prop because it IS
+             copy: the same file already decides which words run gradient, with
+             the *asterisks*, and where a line turns is the same kind of call. */
+          if (t.word.includes("\n")) return <br key={i} />;
+
           /* A PLAIN text space, not a span with a preserved-whitespace class.
              Both `pre` and `pre-wrap` keep the space from collapsing, and that
              is the problem at a line break: a preserved space can end up at the
