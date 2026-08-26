@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, CARD_GAP, HEAD_GAP, PANEL, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, CARD_GAP, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
 
 const { why } = content;
 
@@ -59,13 +59,13 @@ export function WhyUs() {
         </div>
 
         {/* The argument, not a card in the grid — so it gets the wider padding,
-            the tinted ground and the larger radius. It also takes PANEL, the
-            inset the pricing card sits at: the claim text caps at 26ch, so at
-            the full 1800px gutter this box was almost entirely padding, and
-            pulling it in gives the page a second component at that width —
-            which is what turns an inset into a pattern rather than a drift. */}
+            the tinted ground and the larger radius. It runs to the page gutter
+            like everything else; it carried the same 1080 cap the pricing card
+            did for a while, and both came out together. Worth knowing if it
+            ever looks empty: the claim text caps at 26ch, so most of this box's
+            width IS padding at a desktop measure. */}
         <div
-          className={`${PANEL} mt-[clamp(32px,4vw,64px)] flex flex-col items-center gap-6 rounded-3xl border border-line p-[clamp(32px,3.5vw,48px)] text-center ${CLAIM_BG}`}
+          className={`mt-[clamp(32px,4vw,64px)] flex flex-col items-center gap-6 rounded-3xl border border-line p-[clamp(32px,3.5vw,48px)] text-center ${CLAIM_BG}`}
         >
           {/* A DIRECT flex child, deliberately: `display: inline` on a flex
               item blockifies, which is what lets the 26ch measure apply. Wrap

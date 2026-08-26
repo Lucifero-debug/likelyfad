@@ -2,7 +2,7 @@ import { content } from "@/lib/content";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, HEAD_GAP, PANEL, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
 
 const { pricing } = content;
 
@@ -27,16 +27,24 @@ const { pricing } = content;
    right: the divider belonged to the checklist rather than to the split. The
    cap is gone — the column IS the measure now, and it lands within a few
    characters of the 46ch the stacked layout uses — and the grid's gap-x and
-   the list's left padding are one clamp, so the rule sits in the middle of its
-   own gutter at every width. */
+   the list's left padding are ONE NUMBER, 64 each, so the rule sits in the
+   middle of its own 128 gutter at every width from `lap:` up. THOSE TWO MOVE
+   TOGETHER OR NOT AT ALL: change gap-x alone and the hairline slides off centre
+   by exactly the difference, which is how it ended up 183px from the copy and
+   62px from the ticks the first time.
+
+   Padding is a flat 64 from `lap:` too. It was a clamp topping out at 64, which
+   meant the card only actually hit 64 above ~1425px and sat on off-grid values
+   like 63 everywhere below that. The mobile tier below `lap:` stays fluid — 64
+   of padding on a 390px card would leave 262px of content. */
 const CARD =
   "relative overflow-hidden rounded-3xl border border-line bg-white " +
   "p-[clamp(32px,3.5vw,48px)] shadow-[var(--shadow)] " +
   "before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] " +
   "before:bg-[image:var(--grad)] " +
   "lap:grid lap:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lap:content-center " +
-  "lap:gap-x-[clamp(40px,5vw,80px)] lap:gap-y-[clamp(24px,2.2vw,32px)] " +
-  "lap:p-[clamp(40px,4.5vw,64px)] lap:text-left";
+  "lap:gap-x-16 lap:gap-y-[clamp(24px,2.2vw,32px)] " +
+  "lap:p-16 lap:text-left";
 
 export function Pricing() {
   return (
@@ -51,7 +59,7 @@ export function Pricing() {
         </div>
 
         <Reveal delay={120}>
-          <div className={`${PANEL} ${CARD}`}>
+          <div className={CARD}>
             <p className="mx-auto max-w-[46ch] text-pretty text-[clamp(1.05rem,1rem+0.5vw,1.25rem)] leading-[1.4] text-ink-soft lap:col-start-1 lap:row-start-1 lap:mx-0 lap:self-start">
               {pricing.body}
             </p>
@@ -60,7 +68,7 @@ export function Pricing() {
                 of the card. A hairline, not a filled panel: the card already
                 sits on a border and a shadow, and a second surface inside it
                 would be one box too many. */}
-            <ul className="mx-auto mt-4 grid max-w-[340px] gap-3 text-left lap:col-start-2 lap:row-span-2 lap:row-start-1 lap:m-0 lap:max-w-none lap:content-start lap:gap-[clamp(12px,1.1vw,16px)] lap:border-l lap:border-line lap:pl-[clamp(40px,5vw,80px)]">
+            <ul className="mx-auto mt-4 grid max-w-[340px] gap-3 text-left lap:col-start-2 lap:row-span-2 lap:row-start-1 lap:m-0 lap:max-w-none lap:content-start lap:gap-[clamp(12px,1.1vw,16px)] lap:border-l lap:border-line lap:pl-16">
               {pricing.includes.map((it) => (
                 <li
                   key={it}

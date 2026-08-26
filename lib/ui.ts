@@ -33,24 +33,29 @@ export const WRAP =
    padding inside them, which is what makes a boundary read as a boundary. */
 export const SECTION = "py-[clamp(40px,6.5vw,72px)]";
 
-/* Heading block → the content it introduces. It sits UNDER SectionHeading's own
-   16px, so a section whose heading is followed by a sub-headline spends that
-   16px on the sub and this on the gap below it, while one that runs straight
-   into content spends both here — ~64px on a desktop either way. That ordering
-   is the point: kicker, heading, sub, content, each gap larger than the last.
-   Reversed, the sub sits closer to the cards than to the headline it belongs
-   to, and proximity hands it to the cards. */
-export const HEAD_GAP = "mb-[clamp(32px,3.5vw,48px)]";
+/* Heading block → the content it introduces. Tops out at 64.
+
+   THIS NUMBER ONLY HAS TO BEAT ONE OTHER. It sits under SectionHeading's own
+   16px, so in a section with a sub-headline the heading-to-sub gap is that 16
+   plus the sub's own 24 — 40 — and this is the gap below the sub. 64 against 40
+   is the ordering the header block lives or dies on: kicker, then heading, then
+   sub, then content, each gap larger than the last. Inverted, the sub sits
+   nearer the cards than the headline it belongs to and proximity hands it to
+   the cards, which is what a 48 ceiling was still close to doing.
+
+   A section with no sub-headline spends both numbers on one gap and gets 80. */
+export const HEAD_GAP = "mb-[clamp(32px,4.5vw,64px)]";
 
 /* Card grid gap — deliberately the same clamp both card grids use for their
    own padding. gap == internal padding is the floor the rule above sets. */
 export const CARD_GAP = "gap-[clamp(24px,2.5vw,32px)]";
 
-/* The two inset feature panels: Why us's claim and the pricing card. Nothing
-   else on the page is narrower than the gutter, so these two share ONE cap.
-   Two components at the same inset read as a pattern; one on its own reads as
-   a component that drifted off the gutter every other thing lines up to. */
-export const PANEL = "mx-auto w-full max-w-[720px] lap:max-w-[1080px]";
+/* THERE IS NO PANEL INSET ANY MORE. Why us's claim and the pricing card used
+   to share a 720 / 1080 cap, on the reasoning that two components at the same
+   inset read as a pattern where one alone reads as a drift. Both now run to the
+   page gutter instead, so EVERY container on the page starts at the same x and
+   there is no second alignment to learn. If the pricing card reads too wide
+   without it, the fix is to bring the cap back to both — not to one. */
 
 /* The nav is fixed, so an anchor jump would land a section's top edge under
    it. This also covers the browser's OWN anchor navigation — a pasted #faq
