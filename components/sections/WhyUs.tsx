@@ -49,7 +49,7 @@ export function WhyUs() {
                 <span className="font-mono text-[0.8rem] text-pink-deep">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-3 text-balance font-display text-[1.28rem] font-bold leading-[1.03] tracking-[-0.025em]">
+                <h3 className="mt-3 text-balance font-display text-[1.28rem] font-bold leading-[1.2] tracking-[-0.025em]">
                   {p.title}
                 </h3>
                 <p className="mt-2 text-pretty text-[0.98rem] text-ink-soft">{p.body}</p>
