@@ -181,7 +181,7 @@ export function Work() {
         <div className={HEAD_GAP}>
           <SectionHeading kicker={work.kicker} heading={work.heading} tone="bright" />
           <Reveal delay={100}>
-            <p className="mt-3 text-center font-mono text-[0.85rem] tracking-[0.04em] text-ink-dim">
+            <p className="mt-3 text-center font-mono text-[0.85rem] leading-1.2 tracking-[0.04em] text-ink-dim">
               {work.sub}
             </p>
           </Reveal>

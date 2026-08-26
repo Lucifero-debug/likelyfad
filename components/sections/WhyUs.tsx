@@ -33,7 +33,7 @@ export function WhyUs() {
         <div className={`${HEAD_GAP} text-center`}>
           <SectionHeading kicker={why.kicker} heading={why.heading} />
           <Reveal delay={100}>
-            <p className="mx-auto mt-6 max-w-[54ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.5] text-ink-soft">
+            <p className="mx-auto mt-6 max-w-[54ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.2] text-ink-soft">
               {why.lead}
             </p>
           </Reveal>
@@ -52,7 +52,7 @@ export function WhyUs() {
                 <h3 className="mt-3 text-balance font-display text-[1.28rem] font-bold leading-[1.2] tracking-[-0.025em]">
                   {p.title}
                 </h3>
-                <p className="mt-2 text-pretty text-[0.98rem] text-ink-soft">{p.body}</p>
+                <p className="mt-2 text-pretty text-[0.98rem] leading-[1.2] text-ink-soft">{p.body}</p>
               </article>
             </Reveal>
           ))}
@@ -75,7 +75,7 @@ export function WhyUs() {
             as="p"
             text={why.claim}
             stagger={30}
-            className="max-w-[26ch] text-pretty font-display text-[clamp(2.1rem,1.25rem+3.4vw,3.7rem)] font-bold leading-[1.04] tracking-[-0.022em]"
+            className="max-w-[26ch] text-pretty font-display text-[clamp(2.1rem,1.25rem+3.4vw,3.7rem)] font-bold leading-[1.2] tracking-[-0.022em]"
           />
           <Reveal delay={100}>
             <Button contact variant="dark" withArrow>

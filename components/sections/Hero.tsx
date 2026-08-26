@@ -122,14 +122,14 @@ export function Hero() {
             fit per line at 961px and ~22 at 1440px, and the copy's natural
             midpoint ("…nobody | asks…") is 19/19. */}
         <h1
-          className={`mt-1 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.04] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
+          className={`mt-1 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.2] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
         >
           <RevealText text={hero.headline} immediate delay={200} />
         </h1>
 
         <p
           style={sub.style}
-          className={`mt-1 max-w-[48ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.5] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
+          className={`mt-1 max-w-[48ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.2] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
         >
           {hero.subline}
         </p>
