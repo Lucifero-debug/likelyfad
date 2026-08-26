@@ -151,10 +151,22 @@ export function ReelWall() {
                The dim is `:not(:hover)` rather than dim-all-then-undim-one:
                two rules writing opacity at equal specificity would have their
                winner decided by emit order. */
-            className="relative min-h-0 min-w-0 overflow-hidden px-[clamp(8px,0.9vw,12px)] py-[clamp(12px,1.5vw,20px)] [contain:layout_paint_style] [&:hover_button:not(:hover)]:opacity-45"
+            className="relative min-h-0 min-w-0 overflow-hidden px-[clamp(8px,0.9vw,12px)] py-[clamp(16px,1.5vw,20px)] [contain:layout_paint_style] [&:hover_button:not(:hover)]:opacity-45"
           >
             <div
-              className={`flex w-max animate-lane-x gap-[clamp(4px,0.6vw,8px)] will-change-transform lap:w-auto lap:animate-lane-y lap:flex-col ${
+              /* HOVERING A CLIP STOPS ITS OWN LANE, and only that lane — the
+                 play state sits on the track, so the other two keep running.
+                 `:has(button:hover)` rather than a bare `:hover` on the lane:
+                 the track is taller than the lane it shows through, and a bare
+                 hover would also fire in the gaps between cards, which reads as
+                 the wall stalling at random. animation-play-state cannot be
+                 transitioned, so the stop is instant by definition — that is
+                 the convention for a marquee and not something to paper over.
+
+                 It composes with the MotionToggle below: that writes the same
+                 property from the `paused` state, and either source pausing is
+                 enough. */
+              className={`flex w-max animate-lane-x gap-[clamp(4px,0.6vw,8px)] will-change-transform lap:w-auto lap:animate-lane-y lap:flex-col [&:has(button:hover)]:[animation-play-state:paused] ${
                 LANE_STYLE[li].reverse ? "[animation-direction:reverse]" : ""
               } ${paused ? "[animation-play-state:paused]" : ""}`}
               style={{ animationDuration: LANE_STYLE[li].duration }}
@@ -194,11 +206,11 @@ export function ReelWall() {
         <p className="text-center font-mono text-[0.76rem] uppercase tracking-[0.06em] text-ink-faint">
           {content.reels.caption}
         </p>
-        <MotionToggle
+        {/* <MotionToggle
           paused={paused}
           onToggle={() => setPaused((p) => !p)}
           label="the reel wall"
-        />
+        /> */}
       </div>
 
       {active && <Lightbox reel={active} onClose={() => setActive(null)} />}

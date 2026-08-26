@@ -73,12 +73,17 @@ const ROWS_OF_PICKS = Array.from({ length: ROWS }, (_, row) =>
    video's `poster` attribute as well made the browser hold two decoded rasters
    of the same webp per tile.
 
-   ONLY opacity transitions. box-shadow used to be named in this transition
+   OPACITY AND TRANSFORM ONLY. box-shadow used to be named in this transition
    too, driving a 54px-blur hover shadow, and it is the one property that can
    never be: it repaints that blur every frame, around a tile the marquee is
    translating and a video is decoding into. The bigger hover shadow is now a
    second layer cross-faded over the resting one (the ::after), which
-   composites instead of repainting.
+   composites instead of repainting. Transform is safe for the opposite reason
+   — the hover scale is a compositor operation on one tile at a time, and it
+   costs nothing per frame while the tile sits at rest.
+
+   The scale is 1.05 and NOT MORE, because the room for it is finite: see the
+   padding on the row below, which is what stops it being clipped.
 
    Keep utility syntax OUT of these comments, incidentally — Tailwind scans the
    whole file, comments included, and will emit a real class for anything that
@@ -91,8 +96,8 @@ const ROWS_OF_PICKS = Array.from({ length: ROWS }, (_, row) =>
 const TILE =
   "relative aspect-[9/16] w-[clamp(112px,33vw,146px)] flex-none rounded-lg " +
   "bg-[#1a1620] shadow-[0_12px_32px_rgba(0,0,0,0.45)] " +
-  "transition-opacity duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
-  "active:brightness-90 " +
+  "transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
+  "hover:scale-[1.05] active:brightness-90 " +
   "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] " +
   "after:shadow-[0_20px_54px_rgba(0,0,0,0.62)] after:opacity-0 after:content-[''] " +
   "after:transition-opacity after:duration-[280ms] hover:after:opacity-100 " +
@@ -198,11 +203,30 @@ export function Work() {
                winner decided by emit order.
 
                `contain` scopes the marquee's per-frame layout and paint
-               invalidation to the row rather than letting it walk the page. */
-            className="overflow-hidden [contain:layout_paint_style] [&:hover_button:not(:hover)]:opacity-45"
+               invalidation to the row rather than letting it walk the page.
+
+               py-3 -my-3 IS WHAT GIVES THE HOVER SCALE SOMEWHERE TO GO. Both
+               `overflow-hidden` and `contain: paint` clip at the padding box,
+               and a row with no padding is exactly as tall as its tiles — so a
+               tile growing 5% would have had its top and bottom sliced off. The
+               12px of padding is the room, and the equal negative margin hands
+               it straight back to the layout, so the visible gap between rows
+               is still the container's own and nothing below moves. At the
+               widest tile (158px, so 281px tall) a 1.05 scale needs 7px a side:
+               inside 12, with margin to spare. Raise the scale and this has to
+               rise with it.
+
+               The rows' padding boxes now OVERLAP by that same 12px, which is
+               why the hover needs a z-index as well: without it the next row
+               paints over the part of the magnified tile that bleeds into the
+               shared strip. Rows are flex items, so z-index applies to them
+               with no positioning of their own. */
+            className="py-3 -my-3 overflow-hidden [contain:layout_paint_style] hover:z-[3] [&:hover_button:not(:hover)]:opacity-45"
           >
             <div
-              className={`flex w-max animate-lane-x gap-[clamp(8px,1.2vw,12px)] will-change-transform ${
+              /* Hovering a tile stops THIS row and leaves the other two
+                 running — see the same note on the hero wall's lane. */
+              className={`flex w-max animate-lane-x gap-[clamp(8px,1.2vw,12px)] will-change-transform [&:has(button:hover)]:[animation-play-state:paused] ${
                 ROW_STYLE[ri].reverse ? "[animation-direction:reverse]" : ""
               } ${paused ? "[animation-play-state:paused]" : ""}`}
               style={{ animationDuration: ROW_STYLE[ri].duration }}
@@ -231,12 +255,12 @@ export function Work() {
       </div>
 
       <div className={`${WRAP} mt-6 flex justify-end`}>
-        <MotionToggle
+        {/* <MotionToggle
           paused={paused}
           onToggle={() => setPaused((p) => !p)}
           label="the work wall"
           tone="dark"
-        />
+        /> */}
       </div>
 
       {/* Dozens of near-identical tile labels would be noise to a screen
