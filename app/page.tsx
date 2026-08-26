@@ -22,15 +22,20 @@ import { Footer } from "@/components/sections/Footer";
    desktop, so each stretches to its lane and the three lanes just get wider.
    Capping at 1800px fixes both at once.
 
-   The trailing 18px is the seam to Why us, and it is ONE number because both
-   sides are wired to it: this padding and Why us's leading padding. Closing
-   only one leaves the other still holding the two apart. */
+   The trailing padding is the seam to Why us and it carries SECTION's clamp
+   verbatim, so the hero block is separated from the first band by the same
+   two-unit gap every other boundary on the page gets. It also un-sinks the
+   hero: the two columns are centred against each other, so an 18px floor under
+   a ~128px ceiling parked the whole block well below the optical centre and
+   left the wall's caption row sitting on the fold with nothing under it. The
+   clamp is spelled out rather than interpolated from SECTION because Tailwind
+   scans source TEXT — see the note at the foot of lib/ui.ts. */
 const SPLIT =
   "relative " +
   "lap:mx-auto lap:grid lap:w-full lap:max-w-[1800px] " +
   "lap:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lap:items-center " +
   "lap:gap-[clamp(24px,3vw,48px)] lap:px-[clamp(20px,5vw,64px)] " +
-  "lap:pt-[clamp(96px,9vh,128px)] lap:pb-[18px]";
+  "lap:pt-[clamp(96px,9vh,128px)] lap:pb-[clamp(40px,6.5vw,72px)]";
 
 export default function Home() {
   return (

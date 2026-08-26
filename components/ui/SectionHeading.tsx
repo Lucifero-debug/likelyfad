@@ -14,9 +14,16 @@ import { RevealText } from "@/components/ui/RevealText";
    words inside it are the boxes that lay the line out. That is v1's structure,
    not an accident of it — see RevealText on why plain text sets differently.
 
-   titleSize and leading arrive as inline styles rather than as classes on
-   purpose: a section that overrides either (WhyUs and Pricing both do) would
-   otherwise be setting the same property from a second utility of equal
+   LEADING IS 1.2 ON ALL FIVE, and that is the whole rule — line-height is
+   font-size * 1.2, so the 73.6px a heading sets at desktop leads at 88.3px.
+   Why us used to run 0.92 and Pricing 0.9, on the grounds that a heading this
+   large can take a tighter setting than the type around it; true, but three
+   values across five headings that are otherwise identical read as three
+   accidents rather than as one decision.
+
+   titleSize and leading still arrive as inline styles rather than as classes,
+   even with nothing overriding them today: a section that set either from a
+   second utility would be writing the same property from two classes of equal
    specificity, and which one won would come down to the order Tailwind happened
    to emit them in. An inline style has no such argument to lose. */
 const DEFAULT_TITLE = "clamp(1.9rem, 1.35rem + 4.4vw, 4.6rem)";
@@ -46,7 +53,8 @@ export function SectionHeading({
   titleSize?: string;
   /** Measure in title-em. Widen it for a heading that breaks itself with a \n. */
   measure?: string;
-  /** Overrides the 1.04 the display sizes share. */
+  /** Overrides the 1.2 every section heading sets. Nothing passes this today
+      — the five headings are deliberately one number. */
   leading?: string;
   className?: string;
 }) {
@@ -58,7 +66,12 @@ export function SectionHeading({
          come down to Tailwind's emit order. An inline custom property has no
          such argument to lose. */
       style={{ "--title": titleSize, "--measure": measure } as CSSProperties}
-      className={`mx-auto mt-2 mb-4 max-w-[calc(var(--title)*var(--measure))] text-center ${className}`}
+      /* NO TOP MARGIN. The section's own padding is the entire gap above a
+         heading; an 8px rider on top of it bought nothing and was half of why
+         the FAQ's two columns started at visibly different heights. The 16px
+         below is the heading-to-sub half of the rhythm — the rest of the gap
+         belongs to the section, as HEAD_GAP. */
+      className={`mx-auto mb-4 max-w-[calc(var(--title)*var(--measure))] text-center ${className}`}
     >
       <Reveal>
         {/* Section kickers sit above a big heading, so they carry more presence
@@ -93,7 +106,7 @@ export function SectionHeading({
         style={leading ? { lineHeight: leading } : undefined}
         className={`mt-3 ${
           heading.includes("\n") ? "text-pretty" : "text-balance"
-        } font-display text-(length:--title) font-bold leading-[1.04] tracking-[-0.022em]`}
+        } font-display text-(length:--title) font-bold leading-[1.2] tracking-[-0.022em]`}
       />
     </div>
   );

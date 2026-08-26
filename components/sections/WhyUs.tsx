@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, SECTION, SECTION_FLUSH_TOP, WRAP } from "@/lib/ui";
+import { ANCHOR, CARD_GAP, HEAD_GAP, PANEL, SECTION, WRAP } from "@/lib/ui";
 
 const { why } = content;
 
@@ -28,13 +28,10 @@ const CLAIM_BG =
 
 export function WhyUs() {
   return (
-    <section id="why" className={`${SECTION} ${SECTION_FLUSH_TOP} ${ANCHOR}`} aria-label={why.kicker}>
+    <section id="why" className={`${SECTION} ${ANCHOR}`} aria-label={why.kicker}>
       <div className={WRAP}>
-        <div className="mb-3 text-center">
-          {/* Tighter leading than the 1.04 the display sizes share — this
-              heading and the hero's are the two that set large enough for it
-              to read as deliberate rather than as cramped. */}
-          <SectionHeading kicker={why.kicker} heading={why.heading} leading="0.92" />
+        <div className={`${HEAD_GAP} text-center`}>
+          <SectionHeading kicker={why.kicker} heading={why.heading} />
           <Reveal delay={100}>
             <p className="mx-auto mt-6 max-w-[54ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.5] text-ink-soft">
               {why.lead}
@@ -42,7 +39,7 @@ export function WhyUs() {
           </Reveal>
         </div>
 
-        <div className="grid gap-4 phone:grid-cols-2 lap:grid-cols-3">
+        <div className={`grid ${CARD_GAP} phone:grid-cols-2 lap:grid-cols-3`}>
           {why.pillars.map((p, i) => (
             /* Stagger runs across the ROW, not the whole grid: at 6 × 70ms the
                last card would still be arriving long after the reader got
@@ -62,9 +59,13 @@ export function WhyUs() {
         </div>
 
         {/* The argument, not a card in the grid — so it gets the wider padding,
-            the tinted ground and the larger radius. */}
+            the tinted ground and the larger radius. It also takes PANEL, the
+            inset the pricing card sits at: the claim text caps at 26ch, so at
+            the full 1800px gutter this box was almost entirely padding, and
+            pulling it in gives the page a second component at that width —
+            which is what turns an inset into a pattern rather than a drift. */}
         <div
-          className={`mt-[clamp(12px,4vw,48px)] flex flex-col items-center gap-6 rounded-3xl border border-line p-[clamp(32px,3.5vw,48px)] text-center ${CLAIM_BG}`}
+          className={`${PANEL} mt-[clamp(32px,4vw,64px)] flex flex-col items-center gap-6 rounded-3xl border border-line p-[clamp(32px,3.5vw,48px)] text-center ${CLAIM_BG}`}
         >
           {/* A DIRECT flex child, deliberately: `display: inline` on a flex
               item blockifies, which is what lets the 26ch measure apply. Wrap

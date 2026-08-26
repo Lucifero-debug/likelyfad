@@ -109,12 +109,13 @@ export function Hero() {
             Montserrat because its lining figures sit close to its average letter
             width. Re-measure if the heading face changes.
 
-            Leading is 1.04, the same display leading the section headings
-            carry. It sat at 0.78 for a long time — a deliberately tight,
-            stacked-block setting — and the lines were opened up to here. The
-            headline is the only place that tight a setting ever read as
-            deliberate rather than cramped, so if it goes back down, keep the
-            change scoped to this h1 and off SectionHeading.
+            Leading is 1.04, and it is now the ONE display setting on the page
+            that is not 1.2 — the five section headings were unified there, this
+            h1 was left where it was. It sat at 0.78 for a long time — a
+            deliberately tight, stacked-block setting — and the lines were
+            opened up to here. The headline is the only place that tight a
+            setting ever read as deliberate rather than cramped, so if it goes
+            back down, keep the change scoped to this h1 and off SectionHeading.
 
             The laptop size is tuned to break the 39-character headline evenly
             over exactly TWO lines across the whole desktop range: ~21 characters

@@ -9,7 +9,7 @@ import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
 
 const { work } = content;
 
@@ -173,7 +173,7 @@ export function Work() {
       className={`${SECTION} ${ANCHOR} relative overflow-hidden bg-[radial-gradient(120%_90%_at_50%_-10%,#241d2b,#17141b_72%)] text-[#f5f3f0]`}
     >
       <div className={WRAP}>
-        <div className="mb-[clamp(32px,3.5vw,48px)]">
+        <div className={HEAD_GAP}>
           <SectionHeading kicker={work.kicker} heading={work.heading} tone="bright" />
           <Reveal delay={100}>
             <p className="mt-3 text-center font-mono text-[0.85rem] tracking-[0.04em] text-ink-dim">

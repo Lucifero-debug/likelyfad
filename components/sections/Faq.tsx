@@ -2,7 +2,7 @@ import { content } from "@/lib/content";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
 
 const { faq } = content;
 
@@ -37,7 +37,9 @@ export function Faq() {
         className={`${WRAP} grid items-start gap-[clamp(32px,5vw,64px)] tab:grid-cols-[0.45fr_0.55fr]`}
       >
         <div className="text-center tab:sticky tab:top-24">
-          <SectionHeading kicker={faq.kicker} heading={faq.heading} />
+          <div className={HEAD_GAP}>
+            <SectionHeading kicker={faq.kicker} heading={faq.heading} />
+          </div>
           <Reveal delay={100}>
             <Button contact variant="light" withArrow>
               {faq.cta}
@@ -45,7 +47,15 @@ export function Faq() {
           </Reveal>
         </div>
 
-        <div className="grid">
+        {/* The 7px is an OPTICAL nudge, not a measurement of anything. Both
+            columns are `items-start`, so their boxes already begin at the same
+            y — but the left column starts with TEXT, whose ink sits about that
+            far below its own line box (half-leading, plus the gap between the
+            ascender line and the cap), while this column starts with a
+            hairline, which has no such inset. Without it the rule reads as
+            sitting above the kicker rather than level with it. Taste knob: set
+            it to 0 to switch the correction off. */}
+        <div className="grid tab:mt-[7px]">
           {faq.items.map((item) => (
             <details key={item.q} className="group border-b border-line first:border-t">
               <summary className={QUESTION}>

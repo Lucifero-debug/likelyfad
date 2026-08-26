@@ -124,12 +124,14 @@ export function ReelWall() {
   return (
     <section
       aria-label="Our work"
-      /* No bottom padding below the split: Why us follows immediately there,
-         and its own top padding is zeroed to match, so the wall's caption row
-         runs straight into that band. At `lap:` the wall sits beside the hero
-         instead and the seam is page.tsx's 18px, which is why that end is
-         zeroed too. */
-      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-0 lap:py-0"
+      /* Below the split, Why us follows immediately and this padding is the
+         WHOLE seam to it — SECTION's clamp, spelled out, so that boundary is the
+         same size as every other one on the page. It used to be zero, with Why
+         us zeroing its own top padding to match, and the caption row ran
+         straight into the next band with nothing between them. At `lap:` the
+         wall sits BESIDE the hero instead and the seam belongs to page.tsx's
+         SPLIT, which is why both ends are zeroed there. */
+      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-[clamp(40px,6.5vw,72px)] lap:py-0"
     >
       {/* The stage. Gap is zero on purpose: the lane's own inline padding is
           the entire separator, so the perceived column gap is exactly twice it
