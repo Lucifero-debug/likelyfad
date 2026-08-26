@@ -131,7 +131,7 @@ export function ReelWall() {
          straight into the next band with nothing between them. At `lap:` the
          wall sits BESIDE the hero instead and the seam belongs to page.tsx's
          SPLIT, which is why both ends are zeroed there. */
-      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-[clamp(40px,6.5vw,72px)] lap:py-0"
+      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-[clamp(40px,6.5vw,64px)] lap:py-0"
     >
       {/* The stage. Gap is zero on purpose: the lane's own inline padding is
           the entire separator, so the perceived column gap is exactly twice it
@@ -151,7 +151,7 @@ export function ReelWall() {
                The dim is `:not(:hover)` rather than dim-all-then-undim-one:
                two rules writing opacity at equal specificity would have their
                winner decided by emit order. */
-            className="relative min-h-0 min-w-0 overflow-hidden px-[clamp(8px,0.9vw,12px)] py-[clamp(16px,1.5vw,20px)] [contain:layout_paint_style] [&:hover_button:not(:hover)]:opacity-45"
+            className="relative min-h-0 min-w-0 overflow-hidden px-[clamp(8px,0.9vw,12px)] py-[clamp(16px,1.5vw,24px)] [contain:layout_paint_style] [&:hover_button:not(:hover)]:opacity-45"
           >
             <div
               /* HOVERING A CLIP STOPS ITS OWN LANE, and only that lane — the

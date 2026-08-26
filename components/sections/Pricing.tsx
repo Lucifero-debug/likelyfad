@@ -60,7 +60,7 @@ export function Pricing() {
 
         <Reveal delay={120}>
           <div className={CARD}>
-            <p className="mx-auto max-w-[46ch] text-pretty text-[clamp(1.05rem,1rem+0.5vw,1.25rem)] leading-[1.2] text-ink-soft lap:col-start-1 lap:row-start-1 lap:mx-0 lap:self-start">
+            <p className="mx-auto max-w-[46ch] text-pretty text-[clamp(1.05rem,1rem+0.5vw,1.25rem)] leading-[1.45] text-ink-soft lap:col-start-1 lap:row-start-1 lap:mx-0 lap:self-start">
               {pricing.body}
             </p>
 
@@ -72,7 +72,7 @@ export function Pricing() {
               {pricing.includes.map((it) => (
                 <li
                   key={it}
-                  className="flex items-center gap-3 lap:items-start lap:leading-[1.2]"
+                  className="flex items-center gap-3 lap:items-start lap:leading-[1.45]"
                 >
                   {/* Optically centred against the first line of a wrapping
                       item once the list goes top-aligned. */}
@@ -91,7 +91,7 @@ export function Pricing() {
               <Button contact variant="grad" withArrow>
                 {pricing.cta}
               </Button>
-              <p className="font-mono text-[0.74rem] text-ink-faint leading-[1.2]">{pricing.foot}</p>
+              <p className="font-mono text-[0.74rem] text-ink-faint">{pricing.foot}</p>
             </div>
           </div>
         </Reveal>

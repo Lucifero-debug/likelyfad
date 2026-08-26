@@ -34,8 +34,8 @@ const SPLIT =
   "relative " +
   "lap:mx-auto lap:grid lap:w-full lap:max-w-[1800px] " +
   "lap:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lap:items-center " +
-  "lap:gap-10 lap:px-[clamp(20px,5vw,64px)] " +
-  "lap:pt-[clamp(96px,9vh,128px)] lap:pb-[clamp(40px,6.5vw,72px)]";
+  "lap:gap-10 lap:px-[clamp(24px,5vw,64px)] " +
+  "lap:pt-[clamp(96px,9vh,128px)] lap:pb-[clamp(40px,6.5vw,64px)]";
 
 export default function Home() {
   return (

@@ -14,8 +14,11 @@ import { RevealText } from "@/components/ui/RevealText";
    words inside it are the boxes that lay the line out. That is v1's structure,
    not an accident of it — see RevealText on why plain text sets differently.
 
-   LEADING IS 1.2 ON ALL FIVE, and that is the whole rule — line-height is
-   font-size * 1.2, so the 73.6px a heading sets at desktop leads at 88.3px.
+   LEADING IS ONE SETTING ON ALL FIVE, and that is the whole rule. It is one
+   SETTING and not one NUMBER, because --title spans 30px to 74px and leading
+   tracks size inversely: 1.2 below the split, 1.1 from `lap:` up, where the
+   clamp is past 48px and 1.2 starts reading as a gap between the lines rather
+   than as the setting of a heading.
    Why us used to run 0.92 and Pricing 0.9, on the grounds that a heading this
    large can take a tighter setting than the type around it; true, but three
    values across five headings that are otherwise identical read as three
@@ -53,8 +56,8 @@ export function SectionHeading({
   titleSize?: string;
   /** Measure in title-em. Widen it for a heading that breaks itself with a \n. */
   measure?: string;
-  /** Overrides the 1.2 every section heading sets. Nothing passes this today
-      — the five headings are deliberately one number. */
+  /** Overrides the 1.2 / lap:1.1 every section heading sets. Nothing passes
+      this today — the five headings are deliberately one setting. */
   leading?: string;
   className?: string;
 }) {
@@ -106,7 +109,7 @@ export function SectionHeading({
         style={leading ? { lineHeight: leading } : undefined}
         className={`mt-3 ${
           heading.includes("\n") ? "text-pretty" : "text-balance"
-        } font-display text-(length:--title) font-bold leading-[1.2] tracking-[-0.022em]`}
+        } font-display text-(length:--title) font-bold leading-[1.2] lap:leading-[1.1] tracking-[-0.022em]`}
       />
     </div>
   );

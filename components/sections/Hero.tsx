@@ -94,8 +94,17 @@ export function Hero() {
       {/* The wrap and the flex column are the SAME element, and the children of
           this column are the real elements — no wrapper divs. A reveal wrapper
           around each one would become the flex item, and `align-items` would
-          then be sizing the wrapper rather than the text inside it. */}
-      <div className="relative mx-auto flex w-full max-w-[1180px] flex-col gap-2 md:gap-4 items-center px-[clamp(20px,5vw,64px)] lap:max-w-none lap:items-start lap:px-0">
+          then be sizing the wrapper rather than the text inside it.
+
+          NO `gap` ON THIS COLUMN. Every gap in it is the `mt-*` of the child
+          below, because the four gaps are four different relationships and one
+          gap cannot tell them apart: 8 under the kicker, which belongs to the
+          headline; 24 under the headline; 32 under the sub, the step out of
+          the heading block and into the action; 16 under the buttons, because
+          the reassurance belongs to them. A `gap` sums with each margin and
+          flattens that ordering — it is what once put kicker→h1 and h1→sub at
+          the same 20. */}
+      <div className="relative mx-auto flex w-full max-w-[1180px] flex-col items-center px-[clamp(24px,5vw,64px)] lap:max-w-none lap:items-start lap:px-0">
         <span
           style={kicker.style}
           className={`inline-flex items-center gap-[0.65em] font-mono text-[0.74rem] font-medium uppercase tracking-[0.22em] text-pink-deep before:h-px before:w-[1.7rem] before:bg-current before:opacity-55 before:content-[''] ${kicker.className}`}
@@ -109,9 +118,9 @@ export function Hero() {
             Montserrat because its lining figures sit close to its average letter
             width. Re-measure if the heading face changes.
 
-            Leading is 1.04, and it is now the ONE display setting on the page
-            that is not 1.2 — the five section headings were unified there, this
-            h1 was left where it was. It sat at 0.78 for a long time — a
+            Leading is 1.04, and it is the ONE display setting on the page that
+            does not follow SectionHeading — those five run 1.2, tightening to
+            1.1 from `lap:` up. It sat at 0.78 for a long time — a
             deliberately tight, stacked-block setting — and the lines were
             opened up to here. The headline is the only place that tight a
             setting ever read as deliberate rather than cramped, so if it goes
@@ -122,21 +131,21 @@ export function Hero() {
             fit per line at 961px and ~22 at 1440px, and the copy's natural
             midpoint ("…nobody | asks…") is 19/19. */}
         <h1
-          className={`mt-1 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.2] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
+          className={`mt-2 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.04] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
         >
           <RevealText text={hero.headline} immediate delay={200} />
         </h1>
 
         <p
           style={sub.style}
-          className={`mt-1 max-w-[48ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.2] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
+          className={`mt-6 max-w-[48ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.45] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
         >
           {hero.subline}
         </p>
 
         <div
           style={ctas.style}
-          className={`mt-3 flex flex-wrap justify-center gap-2 lap:justify-start ${ctas.className}`}
+          className={`mt-8 flex flex-wrap justify-center gap-2 lap:justify-start ${ctas.className}`}
         >
           <Button contact variant="grad" withArrow>
             {hero.primaryCta}
@@ -148,7 +157,7 @@ export function Hero() {
 
         <p
           style={reassure.style}
-          className={`mt-0 font-mono text-[0.8rem] tracking-[0.03em] text-ink-faint ${reassure.className}`}
+          className={`mt-4 font-mono text-[0.8rem] tracking-[0.03em] text-ink-faint ${reassure.className}`}
         >
           {hero.reassurance}
         </p>

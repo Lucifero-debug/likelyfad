@@ -33,10 +33,15 @@ const BASE =
    button is the loudest thing on the bar. It reverts at the tablet breakpoint,
    the same one where the nav links come back, so the bar changes shape exactly
    once. Both steps clear the 44px minimum: 0.875rem of Roboto on a 1.6
-   line-height is 22.4px, so py-3 puts the compact button at ~46px. */
+   line-height is 22.4px, so py-3 puts the compact button at ~46px.
+
+   `min-h-[44px]` STATES that floor instead of leaving it to arithmetic. The
+   height above is DERIVED from the body leading, so an edit to that leading
+   resizes this button with nothing in this file touched: taking the page to
+   1.2 once put the compact CTA at 43px, under the floor, silently. */
 const SIZES: Record<Size, string> = {
   default: "px-6 py-4 text-[0.96rem]",
-  compact: "px-4 py-3 text-[0.875rem] tab:px-6 tab:py-4 tab:text-[0.96rem]",
+  compact: "min-h-[44px] px-4 py-3 text-[0.875rem] tab:px-6 tab:py-4 tab:text-[0.96rem]",
 };
 
 const VARIANTS: Record<Variant, string> = {

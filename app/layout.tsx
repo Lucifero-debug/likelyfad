@@ -92,7 +92,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* v1's base type, which every section inherits: the fluid body size, the
           1.6 leading the whole page is spaced against, and the small negative
           tracking Roboto wants at this size. */}
-      <body className="overflow-x-hidden bg-paper font-sans text-[clamp(1rem,0.96rem+0.2vw,1.075rem)] leading-[1.2] tracking-[-0.003em] text-ink antialiased">
+      <body className="overflow-x-hidden bg-paper font-sans text-[clamp(1rem,0.96rem+0.2vw,1.075rem)] leading-[1.6] tracking-[-0.003em] text-ink antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

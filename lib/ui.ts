@@ -14,7 +14,7 @@
    column and the type stop growing together. Above it the extra width goes to
    the margin rather than into the columns. */
 export const WRAP =
-  "mx-auto w-full max-w-[1180px] px-[clamp(20px,5vw,64px)] lap:max-w-[1800px]";
+  "mx-auto w-full max-w-[1180px] px-[clamp(24px,5vw,64px)] lap:max-w-[1800px]";
 
 /* THE SPACING SCALE. Every gap on this page is one of the four constants
    below, and they are ORDERED: a section break is the largest number on the
@@ -29,9 +29,15 @@ export const WRAP =
    Keyed to viewport WIDTH rather than height: how much air a band needs is a
    function of how wide its measure is, and a vh-based version squeezed the
    whole page in a short window. Applied top and bottom, so adjacent sections
-   are separated by 80px on a phone and 144px on a desktop — larger than any
-   padding inside them, which is what makes a boundary read as a boundary. */
-export const SECTION = "py-[clamp(40px,6.5vw,72px)]";
+   are separated by 80px on a phone and 128px on a desktop — larger than any
+   padding inside them, which is what makes a boundary read as a boundary.
+
+   THE SCALE ITSELF, which every authored number on this page is drawn from:
+   4, 8, 12, 16, 24, 32, 40, 48, 64, 80, 96, 128, 160. BOTH ENDS of a clamp
+   have to land on it; what the clamp resolves to between them does not, and
+   cannot — that is the part that makes it fluid. This ceiling was 72, and the
+   desktop seam it built was 144: neither is a rung. */
+export const SECTION = "py-[clamp(40px,6.5vw,64px)]";
 
 /* Heading block → the content it introduces. Tops out at 64.
 
@@ -46,9 +52,13 @@ export const SECTION = "py-[clamp(40px,6.5vw,72px)]";
    A section with no sub-headline spends both numbers on one gap and gets 80. */
 export const HEAD_GAP = "mb-[clamp(32px,4.5vw,64px)]";
 
-/* Card grid gap — deliberately the same clamp both card grids use for their
-   own padding. gap == internal padding is the floor the rule above sets. */
-export const CARD_GAP = "gap-[clamp(24px,2.5vw,32px)]";
+/* Card grid gap — one step ABOVE the clamp both card grids use for their own
+   padding, never equal to it. gap == padding satisfies the letter of the rule
+   above and not its point: at 32 against a 32 pad, a card's text sits exactly
+   as far from its own edge as the seam between two cards is wide, and the
+   border and the white ground are left doing the separating on their own. 48
+   is the next value on the scale that separates them on spacing alone. */
+export const CARD_GAP = "gap-[clamp(32px,3.5vw,48px)]";
 
 /* THERE IS NO PANEL INSET ANY MORE. Why us's claim and the pricing card used
    to share a 720 / 1080 cap, on the reasoning that two components at the same

@@ -41,7 +41,7 @@ export function Footer() {
           as="p"
           text={close.heading}
           tone="bright"
-          className="max-w-[22ch] text-pretty font-display text-[clamp(1.65rem,1rem+2.45vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em] text-white"
+          className="max-w-[22ch] text-pretty font-display text-[clamp(1.65rem,1rem+2.45vw,2.6rem)] font-bold leading-[1.2] tracking-[-0.02em] text-white"
         />
         {/* Right-aligned against the heading so the button lands at the end of
             the reading path. */}
@@ -50,7 +50,7 @@ export function Footer() {
             <Button contact variant="grad" withArrow>
               {close.cta}
             </Button>
-            <p className="max-w-[34ch] font-mono text-[0.76rem] leading-[1.6] tracking-[0.02em] text-white/50">
+            <p className="max-w-[34ch] font-mono text-[0.76rem] tracking-[0.02em] text-white/50">
               {close.sub}
             </p>
           </div>
@@ -63,7 +63,7 @@ export function Footer() {
         <div className="col-span-2 lap:col-span-1">
           <a
             href="#top"
-            className="bg-[image:var(--grad)] bg-clip-text font-display text-[1.8rem] font-extrabold tracking-[-0.03em] text-transparent"
+            className="bg-[image:var(--grad)] bg-clip-text font-display text-[1.8rem] font-extrabold leading-[1.2] tracking-[-0.03em] text-transparent"
           >
             {brand}
           </a>
@@ -97,7 +97,7 @@ export function Footer() {
       </div>
 
       <div
-        className={`${WRAP} mt-[clamp(32px,4vw,40px)] flex flex-col items-start gap-4 border-t border-white/10 pt-5 font-mono text-[0.72rem] text-white/50 phone:flex-row phone:items-center`}
+        className={`${WRAP} mt-[clamp(32px,4vw,40px)] flex flex-col items-start gap-4 border-t border-white/10 pt-6 font-mono text-[0.72rem] text-white/50 phone:flex-row phone:items-center`}
       >
         <span>
           © {year} {brand}. An AI production studio by {PARENT_COMPANY}.
