@@ -124,7 +124,12 @@ export function ReelWall() {
   return (
     <section
       aria-label="Our work"
-      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-[6px] lap:py-0"
+      /* No bottom padding below the split: Why us follows immediately there,
+         and its own top padding is zeroed to match, so the wall's caption row
+         runs straight into that band. At `lap:` the wall sits beside the hero
+         instead and the seam is page.tsx's 18px, which is why that end is
+         zeroed too. */
+      className="relative flex flex-col justify-center overflow-hidden pt-[clamp(24px,4vw,48px)] pb-0 lap:py-0"
     >
       {/* The stage. Gap is zero on purpose: the lane's own inline padding is
           the entire separator, so the perceived column gap is exactly twice it

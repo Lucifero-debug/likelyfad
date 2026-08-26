@@ -109,16 +109,19 @@ export function Hero() {
             Montserrat because its lining figures sit close to its average letter
             width. Re-measure if the heading face changes.
 
-            Leading is 0.78, far tighter than the 1.04 every other display size
-            shares, and scoped to the hero because the same leading on a section
-            heading reads as cramped rather than deliberate.
+            Leading is 1.04, the same display leading the section headings
+            carry. It sat at 0.78 for a long time — a deliberately tight,
+            stacked-block setting — and the lines were opened up to here. The
+            headline is the only place that tight a setting ever read as
+            deliberate rather than cramped, so if it goes back down, keep the
+            change scoped to this h1 and off SectionHeading.
 
             The laptop size is tuned to break the 39-character headline evenly
             over exactly TWO lines across the whole desktop range: ~21 characters
             fit per line at 961px and ~22 at 1440px, and the copy's natural
             midpoint ("…nobody | asks…") is 19/19. */}
         <h1
-          className={`mt-1 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[0.78] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
+          className={`mt-1 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.04] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
         >
           <RevealText text={hero.headline} immediate delay={200} />
         </h1>

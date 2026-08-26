@@ -40,6 +40,21 @@ const PER_LANE = 8;
    clears the fade. */
 const THRESHOLD = 0.2;
 
+/* How long a tile has to STAY on screen before it is allowed to start.
+
+   Every clip ships `preload="none"`, so play() is not a cheap resume — it is a
+   fresh network fetch plus a decoder spin-up. Scrolling the work wall past the
+   viewport crosses ninety-six tiles through the threshold, and starting each
+   one as it passed fired a burst of dozens of requests and decoder inits into
+   the middle of the scroll, which is exactly where there is no budget for it.
+
+   A tile in transit during a normal scroll is on screen for well under this,
+   so it now costs nothing at all: the timer is cancelled on the way out and no
+   fetch is ever made. Only tiles you actually stop on load. The cost is that
+   settling on a wall shows posters for this long before the clips pick up,
+   which is far cheaper than the scroll it buys. */
+const DWELL_MS = 220;
+
 type Lane = {
   /* Both are insertion-ordered — a Set iterates in the order things went into
      it, which IS the queue. Nothing else maintains it. */
@@ -51,6 +66,9 @@ type Registry = {
   io: IntersectionObserver;
   lanes: Map<string, Lane>;
   laneOf: WeakMap<HTMLVideoElement, Lane>;
+  /* Tiles on screen but still serving their dwell. A plain Map, not a Weak
+     one: an entry here owns a live timer that has to be findable to cancel. */
+  waiting: Map<HTMLVideoElement, ReturnType<typeof setTimeout>>;
 };
 
 let registry: Registry | null = null;
@@ -79,27 +97,52 @@ function getRegistry(): Registry {
 
   const lanes = new Map<string, Lane>();
   const laneOf = new WeakMap<HTMLVideoElement, Lane>();
+  const waiting = new Map<HTMLVideoElement, ReturnType<typeof setTimeout>>();
+
   const io = new IntersectionObserver(
     (entries) => {
       /* Reconcile each touched lane ONCE at the end. A batch of entries from
          one lane would otherwise re-run the whole queue per entry. */
       const touched = new Set<Lane>();
+
       for (const entry of entries) {
         const el = entry.target as HTMLVideoElement;
         const lane = laneOf.get(el);
         if (!lane) continue;
-        /* add() on something already present does not move it — an element
-           only goes to the back of the queue by genuinely leaving first. */
-        if (entry.isIntersecting) lane.visible.add(el);
-        else lane.visible.delete(el);
-        touched.add(lane);
+
+        if (entry.isIntersecting) {
+          /* Already queued or already counted — leave the arrival time it
+             has. Re-adding would only shuffle it down its own lane's queue. */
+          if (lane.visible.has(el) || waiting.has(el)) continue;
+          waiting.set(
+            el,
+            setTimeout(() => {
+              waiting.delete(el);
+              /* Joining the queue HERE, at the end of the dwell, is what makes
+                 the FIFO order arrival order rather than threshold order. */
+              lane.visible.add(el);
+              reconcile(lane);
+            }, DWELL_MS)
+          );
+          continue;
+        }
+
+        /* Leaving is immediate — a tile off screen should stop paying for
+           itself this frame, not after a delay. */
+        const pending = waiting.get(el);
+        if (pending !== undefined) {
+          clearTimeout(pending);
+          waiting.delete(el);
+        }
+        if (lane.visible.delete(el)) touched.add(lane);
       }
+
       touched.forEach(reconcile);
     },
     { threshold: THRESHOLD }
   );
 
-  registry = { io, lanes, laneOf };
+  registry = { io, lanes, laneOf, waiting };
   return registry;
 }
 
@@ -124,6 +167,12 @@ export function useInViewPlay(lane: string) {
     const queue = bucket;
     return () => {
       r.io.unobserve(el);
+      // A dwell timer outliving its element would resurrect it into the queue.
+      const pending = r.waiting.get(el);
+      if (pending !== undefined) {
+        clearTimeout(pending);
+        r.waiting.delete(el);
+      }
       queue.visible.delete(el);
       if (queue.playing.delete(el)) el.pause();
       // Unmounting frees a slot; hand it to whoever is next in line.

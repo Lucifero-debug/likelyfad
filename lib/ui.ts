@@ -26,3 +26,16 @@ export const SECTION = "py-[clamp(12px,6.5vw,30px)]";
    it. This also covers the browser's OWN anchor navigation — a pasted #faq
    link, or a hash restored on reload. */
 export const ANCHOR = "scroll-mt-[88px]";
+
+/* Why us is the one section that does NOT get the shared rhythm above it. It
+   follows the hero's reel wall directly, and below the split breakpoint the
+   wall's caption row and this band read as one block — the gap between them
+   was dead air rather than rhythm. So: flush on a phone, the shared value back
+   from `lap:` up, where the wall sits BESIDE the hero and the seam is the
+   18px in page.tsx instead.
+
+   The clamp is repeated verbatim rather than interpolated from SECTION because
+   Tailwind scans source TEXT: a class name assembled from a variable is never
+   seen by the scanner and the utility is never emitted. If the rhythm number
+   changes, it changes in both places — which is why they sit together here. */
+export const SECTION_FLUSH_TOP = "pt-0 lap:pt-[clamp(12px,6.5vw,30px)]";

@@ -38,6 +38,23 @@ function tokenize(text: string): Token[] {
    out of view once, synchronously, before the browser has painted anything. */
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+/* The word transition's own duration. Named because the release below has to
+   outlast it, and the two must not drift apart. */
+const DURATION = 900;
+
+/* `done` is not cosmetic. Every word carries `will-change: transform` so the
+   compositor has its layer ready BEFORE the slide starts — that is what the
+   property is for. What it is not for is staying on: a will-change that is
+   never removed pins one layer per word for the life of the page, and this
+   page sets 68 of them across the hero, six section headings, the testimonials
+   and the FAQ. The compositor then carries all 68 through every scroll frame,
+   on top of the six marquee tracks and the video tiles.
+
+   So the reveal is a one-shot that CLEANS UP: `done` drops the hint, the
+   transition and the transform once the last word has landed, and the words go
+   back to being ordinary text the moment they stop moving. */
+type Phase = "rest" | "armed" | "in" | "done";
+
 export function RevealText({
   text,
   as: Tag = "span",
@@ -62,7 +79,7 @@ export function RevealText({
   style?: CSSProperties;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const [phase, setPhase] = useState<"rest" | "armed" | "in">("rest");
+  const [phase, setPhase] = useState<Phase>("rest");
 
   useIsoLayoutEffect(() => setPhase("armed"), []);
 
@@ -87,6 +104,24 @@ export function RevealText({
     io.observe(el);
     return () => io.disconnect();
   }, [phase, immediate, delay]);
+
+  /* Hand the layers back once the LAST word has landed — the last word is the
+     one whose stagger offset is largest, so that is the clock to run to. The
+     margin covers the gap between a transition's nominal duration and the frame
+     it actually settles on.
+
+     A timer rather than `transitionend`: the words are separate elements with
+     separate transitions, so listening would mean one handler per word and a
+     count to know which was last. Under prefers-reduced-motion the transition
+     is neutralised globally and this just fires into an already-finished
+     animation, which is harmless. */
+  useEffect(() => {
+    if (phase !== "in") return;
+    const words = tokenize(text).filter((t) => !/\s+/.test(t.word)).length;
+    const settles = delay + Math.max(0, words - 1) * stagger + DURATION;
+    const t = setTimeout(() => setPhase("done"), settles + 120);
+    return () => clearTimeout(t);
+  }, [phase, text, delay, stagger]);
 
   const grad = tone === "ink" ? "bg-[image:var(--grad-ink)]" : "bg-[image:var(--grad)]";
   const tokens = tokenize(text);
@@ -128,13 +163,18 @@ export function RevealText({
                  gradient words vanish outright instead of being trimmed.
                  Padding extends the painted area; the negative margin keeps the
                  box the same size to lay out. */
-              className={`inline-block pb-[0.16em] -mb-[0.16em] will-change-transform ${
+              /* will-change rides the two moving phases ONLY, never the base:
+                 in `done` the word is ordinary text again and holds no layer.
+                 The 900ms here is DURATION written as a utility — Tailwind
+                 scans source text, so it cannot be interpolated from the
+                 constant. Change one, change the other. */
+              className={`inline-block pb-[0.16em] -mb-[0.16em] ${
                 t.grad ? `${grad} bg-clip-text text-transparent` : ""
               } ${
                 phase === "armed"
-                  ? "translate-y-[118%]"
+                  ? "translate-y-[118%] will-change-transform"
                   : phase === "in"
-                    ? "translate-y-0 transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    ? "translate-y-0 will-change-transform transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                     : ""
               }`}
             >

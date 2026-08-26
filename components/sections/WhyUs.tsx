@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, SECTION, SECTION_FLUSH_TOP, WRAP } from "@/lib/ui";
 
 const { why } = content;
 
@@ -28,13 +28,13 @@ const CLAIM_BG =
 
 export function WhyUs() {
   return (
-    <section id="why" className={`${SECTION} ${ANCHOR}`} aria-label={why.kicker}>
+    <section id="why" className={`${SECTION} ${SECTION_FLUSH_TOP} ${ANCHOR}`} aria-label={why.kicker}>
       <div className={WRAP}>
         <div className="mb-3 text-center">
           {/* Tighter leading than the 1.04 the display sizes share — this
               heading and the hero's are the two that set large enough for it
               to read as deliberate rather than as cramped. */}
-          <SectionHeading kicker={why.kicker} heading={why.heading} leading="0.82" />
+          <SectionHeading kicker={why.kicker} heading={why.heading} leading="0.92" />
           <Reveal delay={100}>
             <p className="mx-auto mt-6 max-w-[54ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.5] text-ink-soft">
               {why.lead}

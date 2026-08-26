@@ -58,11 +58,20 @@ const ROWS_OF_PICKS = Array.from({ length: ROWS }, (_, row) =>
 );
 
 /* Tiles are smaller and squarer-cornered than the hero wall's cards: this wall
-   is about count, and a smaller tile puts more of them on screen. The poster
-   is a background-image, so the tile is painted before the <video> element has
-   fetched a single byte — and that is the ONLY copy of it, deliberately.
-   Setting it as the video's `poster` attribute as well made the browser hold
-   two decoded rasters of the same webp per tile, ninety-six times over.
+   is about count, and a smaller tile puts more of them on screen.
+
+   THE POSTER IS AN <img>, NOT A BACKGROUND. It was a background-image, which
+   paints early and needs no element — but a CSS background cannot be lazy
+   loaded, so all ninety-six fetched and decoded the moment the section came
+   into view: ~2.4MB over the wire and ~28MB of decoded bitmap, in one burst,
+   during the scroll that brought them there. A real <img loading="lazy"> lets
+   the browser defer everything off screen, so entering the section pays for
+   roughly the dozen tiles per row actually visible and the rest arrive as they
+   translate in. `bg-[#1a1620]` below is what shows until one lands.
+
+   It is also the only copy of the poster, deliberately: setting it as the
+   video's `poster` attribute as well made the browser hold two decoded rasters
+   of the same webp per tile.
 
    ONLY opacity transitions. box-shadow used to be named in this transition
    too, driving a 54px-blur hover shadow, and it is the one property that can
@@ -81,7 +90,7 @@ const ROWS_OF_PICKS = Array.from({ length: ROWS }, (_, row) =>
    border box, radius included. */
 const TILE =
   "relative aspect-[9/16] w-[clamp(112px,33vw,146px)] flex-none rounded-lg " +
-  "bg-[#1a1620] bg-cover bg-center bg-no-repeat shadow-[0_12px_32px_rgba(0,0,0,0.45)] " +
+  "bg-[#1a1620] shadow-[0_12px_32px_rgba(0,0,0,0.45)] " +
   "transition-opacity duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
   "active:brightness-90 " +
   "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] " +
@@ -114,18 +123,31 @@ function Tile({
   const video = useInViewPlay(lane);
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-label={label}
-      className={TILE}
-      style={reel.poster ? { backgroundImage: `url(${reel.poster})` } : undefined}
-    >
+    <button type="button" onClick={onOpen} aria-label={label} className={TILE}>
       {/* The clip gets its own box so the tile is free to paint shadows outside
           itself. A wrapper rather than border-radius straight on the <video>:
           Safari has been unreliable about clipping video to its own corners,
           and overflow:hidden on a plain box is not. */}
       <span className="absolute inset-0 overflow-hidden rounded-[inherit]">
+        {reel.poster && (
+          /* eslint-disable-next-line @next/next/no-img-element -- a remote blob
+             URL already at the size it renders. next/image would mean a
+             remotePatterns entry and a proxy hop to re-encode a 24KB webp into
+             itself; the only thing wanted here is the browser's own lazy
+             loading, which a plain <img> gives directly. */
+          <img
+            src={reel.poster}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 size-full object-cover"
+          />
+        )}
+        {/* `relative` so the video is POSITIONED like the poster above it and
+            paint order falls back to DOM order. Left static it would paint in
+            the in-flow step, which comes before positioned descendants — and
+            the poster would sit on top of the playing clip. */}
         <video
           ref={video}
           src={reel.src}
@@ -134,7 +156,7 @@ function Tile({
           playsInline
           preload="none"
           tabIndex={-1}
-          className="size-full object-cover"
+          className="relative size-full object-cover"
         />
       </span>
     </button>
