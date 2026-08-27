@@ -7,6 +7,7 @@ import type { Reel } from "@/lib/reels.generated";
 import { useInViewPlay } from "@/lib/useInViewPlay";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
+import { TEXT_META } from "@/lib/ui";
 
 /* Wall of autoplaying portrait reels, sitting beside the hero on a laptop and
    below it on a phone.
@@ -203,7 +204,7 @@ export function ReelWall() {
       {/* Caption and pause control share one row under the stage, so the
           control costs the wall no vertical space of its own. */}
       <div className="mt-[clamp(16px,2vw,24px)] flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
-        <p className="text-center font-mono text-[0.76rem] uppercase tracking-[0.06em] text-ink-faint">
+        <p className={`text-center font-mono ${TEXT_META} uppercase tracking-[0.06em] text-ink-faint`}>
           {content.reels.caption}
         </p>
         {/* <MotionToggle

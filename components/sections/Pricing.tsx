@@ -2,7 +2,7 @@ import { content } from "@/lib/content";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, TEXT_LEAD, TEXT_META, WRAP } from "@/lib/ui";
 
 const { pricing } = content;
 
@@ -60,7 +60,7 @@ export function Pricing() {
 
         <Reveal delay={120}>
           <div className={CARD}>
-            <p className="mx-auto max-w-[46ch] text-pretty text-[clamp(1.05rem,1rem+0.5vw,1.25rem)] leading-[1.45] text-ink-soft lap:col-start-1 lap:row-start-1 lap:mx-0 lap:self-start">
+            <p className={`mx-auto max-w-[46ch] text-pretty ${TEXT_LEAD} leading-[1.45] text-ink-soft lap:col-start-1 lap:row-start-1 lap:mx-0 lap:self-start`}>
               {pricing.body}
             </p>
 
@@ -91,7 +91,7 @@ export function Pricing() {
               <Button contact variant="grad" withArrow>
                 {pricing.cta}
               </Button>
-              <p className="font-mono text-[0.74rem] text-ink-faint">{pricing.foot}</p>
+              <p className={`font-mono ${TEXT_META} text-ink-faint`}>{pricing.foot}</p>
             </div>
           </div>
         </Reveal>

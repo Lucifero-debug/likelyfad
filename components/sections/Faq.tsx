@@ -2,7 +2,7 @@ import { content } from "@/lib/content";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, TEXT_SMALL, TEXT_TITLE, WRAP } from "@/lib/ui";
 
 const { faq } = content;
 
@@ -17,7 +17,7 @@ const { faq } = content;
    drawing our own, which rotates off `group-open`. */
 const QUESTION =
   "flex w-full cursor-pointer list-none items-center justify-between gap-6 py-6 text-left " +
-  "font-display text-[clamp(1.05rem,1rem+0.5vw,1.3rem)] font-semibold leading-[1.3] tracking-[-0.01em] " +
+  `font-display ${TEXT_TITLE} font-semibold leading-[1.3] tracking-[-0.01em] ` +
   "transition-colors duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
   "hover:text-pink-deep active:opacity-60 [&::-webkit-details-marker]:hidden";
 
@@ -65,7 +65,7 @@ export function Faq() {
                   <i className="absolute inset-0 m-auto h-[11px] w-[1.6px] bg-ink group-open:bg-pink" />
                 </span>
               </summary>
-              <p className="max-w-[52ch] text-pretty pb-6 text-ink-soft">{item.a}</p>
+              <p className={`max-w-[52ch] text-pretty pb-6 ${TEXT_SMALL} text-ink-soft`}>{item.a}</p>
             </details>
           ))}
         </div>

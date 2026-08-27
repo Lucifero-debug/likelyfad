@@ -3,7 +3,18 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, CARD_GAP, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
+import {
+  ANCHOR,
+  CARD_GAP,
+  HEAD_GAP,
+  SECTION,
+  TEXT_LEAD,
+  TEXT_META,
+  TEXT_SMALL,
+  TEXT_STATEMENT,
+  TEXT_TITLE,
+  WRAP,
+} from "@/lib/ui";
 
 const { why } = content;
 
@@ -33,7 +44,7 @@ export function WhyUs() {
         <div className={`${HEAD_GAP} text-center`}>
           <SectionHeading kicker={why.kicker} heading={why.heading} />
           <Reveal delay={100}>
-            <p className="mx-auto mt-6 max-w-[54ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.45] text-ink-soft">
+            <p className={`mx-auto mt-6 max-w-[54ch] text-pretty ${TEXT_LEAD} leading-[1.45] text-ink-soft`}>
               {why.lead}
             </p>
           </Reveal>
@@ -46,13 +57,15 @@ export function WhyUs() {
                there. It resets every three so no card waits more than 140ms. */
             <Reveal key={p.title} delay={(i % 3) * 70} className="h-full">
               <article className={PILLAR}>
-                <span className="font-mono text-[0.8rem] text-pink-deep">
+                <span className={`font-mono ${TEXT_META} text-pink-deep`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-3 text-balance font-display text-[1.28rem] font-bold leading-[1.3] tracking-[-0.025em]">
+                <h3
+                  className={`mt-3 text-balance font-display ${TEXT_TITLE} font-bold leading-[1.3] tracking-[-0.025em]`}
+                >
                   {p.title}
                 </h3>
-                <p className="mt-2 text-pretty text-[0.98rem] text-ink-soft">{p.body}</p>
+                <p className={`mt-2 text-pretty ${TEXT_SMALL} text-ink-soft`}>{p.body}</p>
               </article>
             </Reveal>
           ))}
@@ -75,7 +88,7 @@ export function WhyUs() {
             as="p"
             text={why.claim}
             stagger={30}
-            className="max-w-[26ch] text-pretty font-display text-[clamp(2.1rem,1.25rem+3.4vw,3.7rem)] font-bold leading-[1.2] lap:leading-[1.1] tracking-[-0.022em]"
+            className={`max-w-[26ch] text-pretty font-display ${TEXT_STATEMENT} font-bold leading-[1.2] lap:leading-[1.1] tracking-[-0.022em]`}
           />
           <Reveal delay={100}>
             <Button contact variant="dark" withArrow>

@@ -67,6 +67,83 @@ export const CARD_GAP = "gap-[clamp(32px,3.5vw,48px)]";
    there is no second alignment to learn. If the pricing card reads too wide
    without it, the fix is to bring the cap back to both — not to one. */
 
+/* ============================================================================
+   THE TYPE SCALE. Eight steps, and every piece of text on this page is on one
+   of them. Same argument as the spacing scale above: the rule is that the steps
+   are ORDERED and stay ordered at every width, and the only way to hold that is
+   to have the steps exist as steps rather than as seventeen clamps authored one
+   section at a time.
+
+   What that replaced: six roles — a card title, an FAQ question, three section
+   sublines and a pull-quote — all landing between 17.7px and 22.1px at a
+   desktop width. A card TITLE set at 20.5px next to a section SUBLINE at 22.1px
+   is not a hierarchy with a small gap in it, it is two tiers that have swapped
+   places. Two of them were fixed rem values as well, so which one came out on
+   top depended on the window: the pillar title outranked the Why-us lead on a
+   phone and was outranked by it on a desktop.
+
+   THE RULE THE STEPS ENCODE: a heading runs two to three times the text it
+   introduces. H1 over the hero subline, H2 over a section lead, STATEMENT over
+   its own sub — all three sit in that band across the range. It is a band and
+   not a number because the display steps are STRONGLY fluid (H1 swings 44→75px,
+   1.7×) and reading steps are deliberately not (LEAD swings 18→24px, 1.3×) —
+   which is the correct behaviour for both and means their ratio has to travel.
+   It runs 2.1–2.9 through the widths people actually use, opening past 3 only
+   where the display type has hit its ceiling and the deck has not.
+
+   TITLE — card titles and FAQ questions — is the one tier that does not reach
+   2×, running 1.6–1.9× its own body copy. It is a component label rather than a
+   section heading, and at 2× a pillar card's title would be 30px on a phone and
+   the six of them would read as six competing headlines. Raise TITLE's floor if
+   you want them louder; the step above it, STATEMENT, has the room.
+
+   TWO STEPS CARRY THE HERO'S BREAKPOINT — see the note in SectionHeading. The
+   hero halves its own size at `lap:` because it moves into a column beside the
+   reel wall, and anything that has to stay under it has to make the same move.
+
+   The clamps are spelled out per step and not derived from each other: Tailwind
+   scans source TEXT, so a class assembled from a variable is never emitted at
+   all — the same constraint written up at the foot of this file. */
+
+/* Mono captions, kickers, footnotes, attributions. The floor of the page. */
+export const TEXT_META = "text-[clamp(0.78rem,0.75rem+0.1vw,0.85rem)]";
+
+/* Card copy, FAQ answers, section kickers — the tier that reads UNDER body,
+   for text that belongs to a component rather than to the page. */
+export const TEXT_SMALL = "text-[clamp(0.875rem,0.85rem+0.1vw,0.95rem)]";
+
+/* Body is set once on <body> in app/layout.tsx and inherited, so it is the one
+   step with no constant here: clamp(1rem, 0.96rem + 0.2vw, 1.075rem). */
+
+/* The deck under a heading — hero subline, section lead, pull-quote. THIS is
+   the "subheading" half of the 2–3× rule, and the step every heading above is
+   measured against. */
+export const TEXT_LEAD = "text-[clamp(1.15rem,1rem+0.46vw,1.5rem)]";
+
+/* Component headings: pillar card titles, FAQ questions. */
+export const TEXT_TITLE = "text-[clamp(1.4rem,1.15rem+0.65vw,1.8rem)]";
+
+/* Display type that is NOT a section heading — Why us's claim, the footer's
+   closing line. Held at a constant 0.76 of H2 so a statement inside a section
+   can never outrank the section's own heading; the Why-us claim used to run
+   59px against a 54px heading at 1440 and won. */
+export const TEXT_STATEMENT =
+  "text-[clamp(1.84rem,1rem+3.01vw,3.18rem)] lap:text-[clamp(1.27rem,0.16rem+2.65vw,3.15rem)]";
+
+/* Section headings. A custom property rather than a font-size because
+   SectionHeading derives its measure from it — see the note there. */
+export const TEXT_H2 =
+  "[--title:clamp(2.42rem,1.32rem+3.96vw,4.18rem)] " +
+  "lap:[--title:clamp(1.67rem,0.21rem+3.49vw,4.14rem)]";
+
+/* The hero headline, and the top of the page. Everything above is derived from
+   it: H2 is 0.88 of this, STATEMENT is 0.76 of H2. Move it and the ladder moves.
+   The `lap:` half is tuned to break the 39-character headline over exactly two
+   lines in its column — see the note in Hero.tsx before changing it. */
+export const TEXT_H1 =
+  "text-[clamp(2.75rem,1.5rem+4.5vw,4.75rem)] " +
+  "lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)]";
+
 /* The nav is fixed, so an anchor jump would land a section's top edge under
    it. This also covers the browser's OWN anchor navigation — a pasted #faq
    link, or a hash restored on reload. */

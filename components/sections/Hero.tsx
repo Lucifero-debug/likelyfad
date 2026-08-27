@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { content } from "@/lib/content";
 import { Button } from "@/components/ui/Button";
 import { RevealText } from "@/components/ui/RevealText";
+import { TEXT_H1, TEXT_LEAD, TEXT_META } from "@/lib/ui";
 
 const { hero } = content;
 
@@ -107,7 +108,7 @@ export function Hero() {
       <div className="relative mx-auto flex w-full max-w-[1180px] flex-col items-center px-[clamp(24px,5vw,64px)] lap:max-w-none lap:items-start lap:px-0">
         <span
           style={kicker.style}
-          className={`inline-flex items-center gap-[0.65em] font-mono text-[0.74rem] font-medium uppercase tracking-[0.22em] text-pink-deep before:h-px before:w-[1.7rem] before:bg-current before:opacity-55 before:content-[''] ${kicker.className}`}
+          className={`inline-flex items-center gap-[0.65em] font-mono ${TEXT_META} font-medium uppercase tracking-[0.22em] text-pink-deep before:h-px before:w-[1.7rem] before:bg-current before:opacity-55 before:content-[''] ${kicker.className}`}
         >
           {hero.eyebrow}
         </span>
@@ -131,14 +132,14 @@ export function Hero() {
             fit per line at 961px and ~22 at 1440px, and the copy's natural
             midpoint ("…nobody | asks…") is 19/19. */}
         <h1
-          className={`mt-2 max-w-[20ch] text-balance font-display text-[clamp(2.6rem,1.25rem+5.6vw,5.3rem)] font-bold leading-[1.04] tracking-[-0.022em] lap:max-w-[22ch] lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)] ${OPTICAL}`}
+          className={`mt-2 max-w-[20ch] text-balance font-display ${TEXT_H1} font-bold leading-[1.04] tracking-[-0.022em] lap:max-w-[22ch] ${OPTICAL}`}
         >
           <RevealText text={hero.headline} immediate delay={200} />
         </h1>
 
         <p
           style={sub.style}
-          className={`mt-6 max-w-[48ch] text-pretty text-[clamp(1.1rem,1rem+0.6vw,1.38rem)] leading-[1.45] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
+          className={`mt-6 max-w-[48ch] text-pretty ${TEXT_LEAD} leading-[1.45] text-ink-soft lap:max-w-[42ch] ${sub.className}`}
         >
           {hero.subline}
         </p>
@@ -157,7 +158,7 @@ export function Hero() {
 
         <p
           style={reassure.style}
-          className={`mt-4 font-mono text-[0.8rem] tracking-[0.03em] text-ink-faint ${reassure.className}`}
+          className={`mt-4 font-mono ${TEXT_META} tracking-[0.03em] text-ink-faint ${reassure.className}`}
         >
           {hero.reassurance}
         </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -12,10 +13,11 @@ import {
 /* Word-mask reveal — each word rises from behind its own clip.
 
    This is not decoration you can swap for a plain <h1>: it decides how the
-   headline LAYS OUT. Every word becomes its own inline-flex box, and on a
-   gradient run each word carries its own background-clip, so the ramp restarts
-   per word rather than stretching across the phrase. Set the same text as
-   plain inline text and both the rhythm and the colour come out different. */
+   headline LAYS OUT. Every word becomes its own inline-flex box, and the
+   gradient run is stitched back across those boxes (see RAMP below) so the
+   colour reads as one line-long sweep rather than restarting per word. Set the
+   same text as plain inline text and both the rhythm and the colour come out
+   different. */
 
 type Token = { word: string; grad: boolean };
 
@@ -41,6 +43,42 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
 /* The word transition's own duration. Named because the release below has to
    outlast it, and the two must not drift apart. */
 const DURATION = 900;
+
+/* ONE RAMP PER LINE, NOT ONE PER WORD.
+
+   Each word has to stay its own element — that is what the clip-and-slide
+   reveal is built on — but `background-clip: text` paints across the box that
+   OWNS the background, so a gradient on every word restarts the ramp at every
+   space: five words, five little sweeps, and the phrase never travels far
+   enough along the ramp to reach its end colour at all.
+
+   The fix is to give each gradient word THE WHOLE LINE'S RAMP and slide it
+   sideways: `background-size` is the line's full ink width, and
+   `background-position` is minus that word's offset into the line. Stitched
+   back together the words read as one unbroken sweep — the ramp's first colour
+   where the line starts, its last where the line ends — while the boxes stay
+   separate and can still slide independently.
+
+   Words are grouped by the top of their box, so a gradient run that WRAPS gets
+   a full ramp on each of its lines rather than one stretched across both. Only
+   gradient words count toward a line's extent, so a run sharing its line with
+   plain text ramps across the coloured phrase, not the whole line box.
+
+   Measured off the live layout because nothing else knows where the browser
+   chose to break; re-measured on resize and once the webfont lands, since both
+   move the breaks. */
+type Ramp = { backgroundSize: string; backgroundPosition: string };
+
+function sameRamps(a: Record<number, Ramp>, b: Record<number, Ramp>) {
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every(
+    (k) =>
+      b[+k] !== undefined &&
+      a[+k].backgroundSize === b[+k].backgroundSize &&
+      a[+k].backgroundPosition === b[+k].backgroundPosition
+  );
+}
 
 /* `done` is not cosmetic. Every word carries `will-change: transform` so the
    compositor has its layer ready BEFORE the slide starts — that is what the
@@ -123,6 +161,52 @@ export function RevealText({
     return () => clearTimeout(t);
   }, [phase, text, delay, stagger]);
 
+  /* The OUTER clip box of each gradient word, keyed by word index. The outer
+     box is the one that never moves — the inner span is the one carrying the
+     transform, so measuring that mid-reveal would read a translated position. */
+  const wordBoxes = useRef(new Map<number, HTMLElement>());
+  const [ramps, setRamps] = useState<Record<number, Ramp>>({});
+
+  const measure = useCallback(() => {
+    const words = [...wordBoxes.current.entries()];
+    if (!words.length) return;
+
+    /* Rects, not offsetLeft: these boxes sit inside inline-flex parents whose
+       offsetParent is whatever happens to be positioned further up the tree. */
+    const lines = new Map<number, { n: number; left: number; right: number }[]>();
+    for (const [n, el] of words) {
+      const r = el.getBoundingClientRect();
+      if (!r.width) return; /* not laid out yet — leave the last ramp alone */
+      const key = Math.round(r.top);
+      const line = lines.get(key);
+      if (line) line.push({ n, left: r.left, right: r.right });
+      else lines.set(key, [{ n, left: r.left, right: r.right }]);
+    }
+
+    const next: Record<number, Ramp> = {};
+    for (const line of lines.values()) {
+      const start = Math.min(...line.map((w) => w.left));
+      const end = Math.max(...line.map((w) => w.right));
+      const width = end - start;
+      for (const w of line) {
+        next[w.n] = {
+          backgroundSize: `${width.toFixed(2)}px 100%`,
+          backgroundPosition: `${(start - w.left).toFixed(2)}px 0`,
+        };
+      }
+    }
+    setRamps((prev) => (sameRamps(prev, next) ? prev : next));
+  }, []);
+
+  useIsoLayoutEffect(() => {
+    measure();
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize);
+    /* The webfont swap re-flows the line and takes every break with it. */
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => window.removeEventListener("resize", onResize);
+  }, [measure, text]);
+
   const grad = tone === "ink" ? "bg-[image:var(--grad-ink)]" : "bg-[image:var(--grad)]";
   const tokens = tokenize(text);
   let wordIndex = 0;
@@ -148,7 +232,11 @@ export function RevealText({
              START of the wrapped line, where it is not collapsed either, so the
              line begins one space-width in. Normal white-space processing
              removes a space at a line break, which is why ordinary paragraphs
-             never indent their wrapped lines. */
+             never indent their wrapped lines.
+
+             It is also what carries the ramp THROUGH the gaps: the spaces are
+             ordinary text painted by nothing, so the sweep just keeps counting
+             across them. */
           return " ";
         }
         const n = wordIndex++;
@@ -164,9 +252,24 @@ export function RevealText({
              ends and this overflow:hidden shaves whatever pokes out the bottom.
              The negative margin cancels the padding in LAYOUT only — the clip
              region grows, the line spacing does not move. */
-          <span key={i} className="inline-flex overflow-hidden align-top pb-[0.16em] -mb-[0.1em]">
+          <span
+            key={i}
+            ref={
+              t.grad
+                ? (el) => {
+                    if (el) wordBoxes.current.set(n, el);
+                    else wordBoxes.current.delete(n);
+                  }
+                : undefined
+            }
+            className="inline-flex overflow-hidden align-top pb-[0.16em] -mb-[0.1em]"
+          >
             <span
-              style={phase === "in" ? { transitionDelay: `${delay + n * stagger}ms` } : undefined}
+              style={{
+                /* The line-long ramp, scrolled to this word's place in it. */
+                ...(t.grad ? ramps[n] : null),
+                ...(phase === "in" ? { transitionDelay: `${delay + n * stagger}ms` } : null),
+              }}
               /* pb/-mb again, for a different reason: on a gradient word the
                  visible letters ARE the background, and background-clip:text
                  only paints across this box. Anything outside it is clipped to
@@ -180,7 +283,7 @@ export function RevealText({
                  scans source text, so it cannot be interpolated from the
                  constant. Change one, change the other. */
               className={`inline-block pb-[0.16em] -mb-[0.16em] ${
-                t.grad ? `${grad} bg-clip-text text-transparent` : ""
+                t.grad ? `${grad} bg-no-repeat bg-clip-text text-transparent` : ""
               } ${
                 phase === "armed"
                   ? "translate-y-[118%] will-change-transform"

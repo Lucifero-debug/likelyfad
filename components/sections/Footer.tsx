@@ -3,7 +3,7 @@ import { PARENT_COMPANY } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
-import { WRAP } from "@/lib/ui";
+import { TEXT_META, TEXT_SMALL, TEXT_STATEMENT, WRAP } from "@/lib/ui";
 
 const { brand, close, footer } = content;
 
@@ -41,7 +41,7 @@ export function Footer() {
           as="p"
           text={close.heading}
           tone="bright"
-          className="max-w-[22ch] text-pretty font-display text-[clamp(1.65rem,1rem+2.45vw,2.6rem)] font-bold leading-[1.2] tracking-[-0.02em] text-white"
+          className={`max-w-[22ch] text-pretty font-display ${TEXT_STATEMENT} font-bold leading-[1.2] tracking-[-0.02em] text-white`}
         />
         {/* Right-aligned against the heading so the button lands at the end of
             the reading path. */}
@@ -50,7 +50,7 @@ export function Footer() {
             <Button contact variant="grad" withArrow>
               {close.cta}
             </Button>
-            <p className="max-w-[34ch] font-mono text-[0.76rem] tracking-[0.02em] text-white/50">
+            <p className={`max-w-[34ch] font-mono ${TEXT_META} tracking-[0.02em] text-white/50`}>
               {close.sub}
             </p>
           </div>
@@ -67,12 +67,12 @@ export function Footer() {
           >
             {brand}
           </a>
-          <p className="mt-4 max-w-[30ch] text-white/50">{footer.tagline}</p>
+          <p className={`mt-4 max-w-[30ch] ${TEXT_SMALL} text-white/50`}>{footer.tagline}</p>
         </div>
 
         {footer.columns.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <span className="mb-4 block font-mono text-[0.72rem] uppercase tracking-[0.1em] text-white/50">
+            <span className={`mb-4 block font-mono ${TEXT_META} uppercase tracking-[0.1em] text-white/50`}>
               {col.title}
             </span>
             <ul className="grid gap-2">
@@ -97,7 +97,7 @@ export function Footer() {
       </div>
 
       <div
-        className={`${WRAP} mt-[clamp(32px,4vw,40px)] flex flex-col items-start gap-4 border-t border-white/10 pt-6 font-mono text-[0.72rem] text-white/50 phone:flex-row phone:items-center`}
+        className={`${WRAP} mt-[clamp(32px,4vw,40px)] flex flex-col items-start gap-4 border-t border-white/10 pt-6 font-mono ${TEXT_META} text-white/50 phone:flex-row phone:items-center`}
       >
         <span>
           © {year} {brand}. An AI production studio by {PARENT_COMPANY}.

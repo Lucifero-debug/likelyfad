@@ -9,7 +9,7 @@ import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ANCHOR, HEAD_GAP, SECTION, WRAP } from "@/lib/ui";
+import { ANCHOR, HEAD_GAP, SECTION, TEXT_META, WRAP } from "@/lib/ui";
 
 const { work } = content;
 
@@ -181,7 +181,7 @@ export function Work() {
         <div className={HEAD_GAP}>
           <SectionHeading kicker={work.kicker} heading={work.heading} tone="bright" />
           <Reveal delay={100}>
-            <p className="mt-3 text-center font-mono text-[0.85rem] leading-1.2 tracking-[0.04em] text-ink-dim">
+            <p className={`mt-3 text-center font-mono ${TEXT_META} leading-1.2 tracking-[0.04em] text-ink-dim`}>
               {work.sub}
             </p>
           </Reveal>
