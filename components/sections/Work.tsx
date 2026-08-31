@@ -175,7 +175,32 @@ export function Work() {
     <section
       id="work"
       aria-label={work.kicker}
-      className={`${SECTION} ${ANCHOR} relative overflow-hidden bg-[radial-gradient(120%_90%_at_50%_-10%,#241d2b,#17141b_72%)] text-[#f5f3f0]`}
+      /* THIS SECTION IS SKIPPED ENTIRELY WHILE IT IS OFF SCREEN, and the reason
+         is its three marquees rather than its size.
+
+         The rows hold 96 <video> elements between them and each lane drags a
+         32-clip `will-change: transform` track. The clips themselves are already
+         careful — preload="none", and useInViewPlay keeps them on posters until
+         they are actually visible — but the ANIMATIONS were not gated on
+         anything. They composited every frame whether or not the section was on
+         screen, which meant that sitting still on the hero, three tracks nobody
+         could see were competing for frames with the hero wall's parallax. That
+         parallax is scroll-linked and runs on the main thread, so it gets
+         whatever budget is left, and this was taking a large share of it.
+
+         content-visibility: auto makes the browser skip layout, paint AND
+         compositing for the whole subtree until it comes into view, so the cost
+         is zero rather than merely small. Nothing changes once you reach it.
+
+         contain-intrinsic-size IS NOT OPTIONAL HERE. Without it the skipped
+         section measures 0 tall, the page shrinks by its full height, and the
+         scrollbar jumps every time it enters or leaves — which would trade one
+         kind of jank for a worse one. 1200px is this section's real height at a
+         desktop width (three 158px tiles at 9:16, plus gaps, heading and the
+         SECTION clamp); the `auto` keyword means the browser replaces that
+         estimate with the measured height the first time it renders, so the
+         guess only has to be close once. */
+      className={`${SECTION} ${ANCHOR} relative overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_1200px] bg-[radial-gradient(120%_90%_at_50%_-10%,#241d2b,#17141b_72%)] text-[#f5f3f0]`}
     >
       <div className={WRAP}>
         <div className={HEAD_GAP}>

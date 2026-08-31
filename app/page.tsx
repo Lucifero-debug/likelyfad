@@ -32,6 +32,11 @@ import { ReelWallV2 } from "@/components/sections/ReelWallV2";
 import { HeroV3 } from "@/components/sections/HeroV3";
 import { HeroV4 } from "@/components/sections/HeroV4";
 import { ReelWallV4 } from "@/components/sections/ReelWallV4";
+import { HeroV5 } from "@/components/sections/HeroV5";
+import { ReelWallV5 } from "@/components/sections/ReelWallV5";
+import { HeroV6 } from "@/components/sections/HeroV6";
+import { HeroSplit } from "@/components/v8/HeroSplit";
+import { WALL_COLUMNS } from "@/lib/v8/data";
 
 /* HERO + REEL WALL SPLIT.
 
@@ -74,60 +79,96 @@ export default function Home() {
       <Nav />
 
       <main id="main">
-        <div className={SPLIT}>
+        {/* <div className={SPLIT}>
           <Hero />
           <ReelWall />
-        </div>
+        </div> */}
 
         {/* V2 is a genuine split pair, so it keeps SPLIT — plus `bg-noir`,
             which the pair needs: both halves paint their own dark ground, but
             SPLIT's own padding and gap would show paper through the seams. */}
-        <div className={`${SPLIT} bg-noir`}>
+        {/* <div className={`${SPLIT} bg-noir`}>
           <HeroV2 />
           <ReelWallV2 />
-        </div>
+        </div> */}
 
         {/* V3 IS ONE COMPONENT. HeroV3 renders ReelWallV3 inside itself as the
             stage, so it takes no SPLIT and has no sibling — mounting it beside
             a second <ReelWallV3 /> renders the diptych twice, and both copies
             read the same module-level clip list, so every panel shows the same
             four reels. */}
-        <HeroV3 />
+        {/* <HeroV3 /> */}
 
         {/* V4 STACKS. A full-width masthead over a full-bleed filmstrip — put
             inside SPLIT they land side by side in two columns, which is the one
             arrangement the design is built not to be. */}
-        <HeroV4 />
-        <ReelWallV4 />
+        {/* <HeroV4 />
+        <ReelWallV4 /> */}
 
-        <WhyUs />
-        <WhyUsV2/>
-           <WhyUsV3/>
-           <WhyUsV4/>
-            <WhyUsV5/>
+        {/* V5 IS A SPLIT PAIR, like V1 and V2: hero left, wall right on a
+            laptop, stacked below the breakpoint. It takes SPLIT bare, with no
+            background of its own — both halves sit on the page's own paper, so
+            unlike V2 there are no dark grounds for SPLIT's padding and gap to
+            show a seam through. */}
+        {/* <div className={SPLIT}>
+          <HeroV5 />
+          <ReelWallV5 />
+        </div> */}
+
+        {/* V6 IS ONE COMPONENT AND TAKES NO SPLIT. HeroV6 renders ReelWallV6
+            inside itself and owns its own grid, padding and 100svh, the way
+            HeroSplit does — putting it inside SPLIT would nest one two-column
+            grid in another and halve the copy's measure.
+
+            IT ALSO TAKES ITS CLIPS AS A PROP: nothing about the wall is
+            hardcoded, so the page decides which library it points at. WALL_COLUMNS
+            is reused here rather than duplicated because ReelColumns and
+            WallColumns are the same shape — four arrays of { src, poster, alt } —
+            and TypeScript checks that structurally.
+
+            IT HAS NO SIBLING. Mounting a bare <ReelWallV6 /> next to it renders
+            the wall twice, once inside the hero and once beside it. A bare one
+            also has to be given a height class of its own: the wall takes its
+            footprint from `className` and derives nothing from its clips, which
+            is what stops the uncapped parallax pushing the page around.
+
+            Add `debug` for the live readout — scrollDelta, the set/cell
+            seamlessness invariant, and column 4's wrapped y. */}
+        <HeroV6 columns={WALL_COLUMNS} />
+
+        {/* ONE VARIANT OF EACH BAND IS MOUNTED. THE REST ARE PARKED, AND THIS
+            IS A PERFORMANCE DECISION RATHER THAN AN EDITORIAL ONE.
+
+            Mounting all five of each put 140 <video> elements and seven
+            marquees on one page — 96 of those clips and three of those marquees
+            sat BELOW the fold, decoding and compositing continuously while the
+            only thing anybody was looking at was the hero. The hero's parallax
+            is scroll-linked and runs on the main thread, so it gets whatever
+            frame budget the rest of the page leaves it, and with that much
+            below it there was none: the wall juddered against the page for
+            reasons that had nothing to do with the wall.
+
+            TestimonialsV2 also carried its own scroll listener, so parking it
+            takes a handler off the gesture path as well.
+
+            TO COMPARE DIRECTIONS, uncomment the one you want to look at and
+            re-comment it afterwards. Uncommenting a whole family at once is
+            what created the problem in the first place. */}
+        {/* WHY US, PRICING, FAQ AND THE FOOTER ARE ALL PARKED — every version of
+            each, V1 included. Uncomment a band to bring it back. */}
+        <WhyUs /> <WhyUsV2 /> <WhyUsV3 /> <WhyUsV4 /> <WhyUsV5 />
+
         <Work />
-        <Pricing />
-        <PricingV2 />
-        <PricingV3 />
-        <PricingV4 />
-        <PricingV5 />
+
+        <Pricing /> <PricingV2 /> <PricingV3 /> <PricingV4 /> <PricingV5 />
+
         <Testimonials />
-          <TestimonialsV2 />
-          <TestimonialsV3 />
-           <TestimonialsV4 />
-           <TestimonialsV5 />
-        <Faq />
-        <FaqV2 />
-        <FaqV3 />
-        <FaqV4 />
-        <FaqV5/>
+        <TestimonialsV2 /> <TestimonialsV3 /> <TestimonialsV4 /> <TestimonialsV5 />
+
+        <Faq /> <FaqV2 /> <FaqV3 /> <FaqV4 /> <FaqV5 />
       </main>
 
-      <Footer />
-      <FooterV2 />
-      <FooterV3 />
-      <FooterV4 />
-      <FooterV5 />
+      <Footer /> <FooterV2 /> <FooterV3 /> <FooterV4 /> <FooterV5 />
     </>
   );
 }

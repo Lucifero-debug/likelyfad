@@ -70,6 +70,38 @@
       transform: translateX(-50%);
     }
   }
+
+  /* The V6 reel wall's ambient lane, and the reason it cannot reuse lane-y.
+
+     lane-y slides by a hardcoded -50%, which is one set only when a track holds
+     exactly two of them. The V6 wall's moving lanes hold THREE — they stack a
+     marquee offset and a parallax offset, each of which can reach a full set, so
+     two sets can leave the box empty at the worst phase — and half of three sets
+     is 1.5, which lands the loop point in the middle of a clip.
+
+     Sliding by 100%/--sets is one set for ANY count, so the same keyframe serves
+     the two-set static lane and the three-set moving ones. Each lane declares
+     its own --sets inline; the fallback matches the moving lanes. */
+  --animate-wall6-lane: wall6-lane 180s linear infinite;
+
+  @keyframes wall6-lane {
+    to {
+      transform: translate3d(0, calc(-100% / var(--sets, 3)), 0);
+    }
+  }
+
+  /* The same lane on the other axis, for the wall's phone layout: below `tab`
+     it is three HORIZONTAL rows rather than four vertical columns, so the track
+     runs left instead of up. Identical arithmetic, identical --sets contract —
+     only the axis differs, which is why it is a second keyframe rather than a
+     second component. */
+  --animate-wall6-lane-x: wall6-lane-x 180s linear infinite;
+
+  @keyframes wall6-lane-x {
+    to {
+      transform: translate3d(calc(-100% / var(--sets, 3)), 0, 0);
+    }
+  }
 }
 
 :root {

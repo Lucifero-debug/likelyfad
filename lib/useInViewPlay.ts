@@ -254,13 +254,20 @@ function getRegistry(): Registry {
 }
 
 /* `lane` is the budget bucket, and must be unique per lane ACROSS both walls —
-   the hero wall's lane 0 and the work wall's row 0 are different queues. */
-export function useInViewPlay(lane: string) {
+   the hero wall's lane 0 and the work wall's row 0 are different queues.
+
+   `enabled` false never registers the tile at all, so it holds its poster and
+   costs nothing — no observer entry, no slot, no fetch. It exists for the v8
+   wall, which treats autoplaying video as motion and switches it off under
+   prefers-reduced-motion; the two older walls never pass it and keep the
+   behaviour they had. It is a DEPENDENCY of the effect, so flipping it back
+   registers the tile normally rather than needing a remount. */
+export function useInViewPlay(lane: string, enabled = true) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !enabled) return;
 
     const r = getRegistry();
     let bucket = r.lanes.get(lane);
@@ -285,7 +292,7 @@ export function useInViewPlay(lane: string) {
       // Unmounting frees a slot; hand it to whoever is next in line.
       reconcile(queue);
     };
-  }, [lane]);
+  }, [lane, enabled]);
 
   return ref;
 }
