@@ -104,6 +104,56 @@
   }
 }
 
+/* ============================================================================
+   THE REEL WALL'S TWO CUSTOM PROPERTIES, REGISTERED.
+
+   Both are read from inside a `transform`, and that is the whole reason to
+   register them. An unregistered custom property is a plain TOKEN to the
+   cascade: the browser cannot know `--shift` is a length, so every time the
+   wall's script writes a new one the declaration has to be re-substituted and
+   the transform re-parsed from text before it can be used. Registered with a
+   syntax, the value is parsed once into a typed length and subsequent writes
+   are a number swap. On a wall writing three of these per animation frame,
+   inside a rotated plane, that is the difference between the compositor being
+   handed a value and the style system rebuilding a string.
+
+   IT ALSO MAKES THEM FAIL SOFTLY. Unregistered, one bad write — a bare number
+   where a length was meant, a stray undefined — makes the whole transform
+   invalid at computed-value time and the lane jumps to its untransformed
+   position. Registered, an invalid value is simply ignored and the property
+   keeps its last good one, so the worst case is a lane that stops rather than
+   a lane that leaps.
+
+   inherits: false ON BOTH, deliberately. Nothing below either element reads
+   them — the drift layer reads its own --shift, the track reads its own
+   --sets — and a non-inheriting property does not have to be resolved down
+   through every descendant, which on a lane holding a dozen clips is the
+   difference worth having. It also means a nested wall could never
+   accidentally pick up its parent's offset.
+   ========================================================================== */
+
+/* Written by ReelWallV6's rAF loop on each drift layer: the parallax offset,
+   already wrapped into one set's length. 0px at rest, which is also what the
+   server renders, so the first paint is the untranslated composition and
+   nothing jumps on hydration. */
+@property --shift {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* How many copies of its clip list a lane holds. Set inline per lane and read
+   by the two keyframes above, which slide the track by exactly 100%/--sets —
+   one set for any count, which is what lets the same keyframe serve the
+   two-set static lane and the three-set moving ones. The initial value matches
+   the moving lanes, so a lane that somehow lost the inline value still loops
+   at a whole set rather than mid-clip. */
+@property --sets {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 3;
+}
+
 :root {
   /* TWO CUTS OF ONE RAMP, ON PURPOSE. --grad is the bright brand ramp: correct
      on dark surfaces and on filled shapes (buttons, ticks, rules) where it is

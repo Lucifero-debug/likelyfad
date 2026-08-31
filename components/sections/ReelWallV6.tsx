@@ -661,11 +661,13 @@ export function ReelWallV6({
             its own; the far side projects small and falls short. They need
             opposite treatment:
 
-              LEFT gets NO overhang. At 22 degrees it projects at ~1.11 and
-              covers the frame with a few px to spare unaided. Any overhang here
-              is pure crop — a symmetric 8% took ~29% off this column for
-              nothing, which is exactly what "the leftmost row is cutting in
-              half" was.
+              LEFT gets a 4.5% INSET, not zero. At 22 degrees the near side
+              projects at ~1.20 and
+              overshoots the frame if the plane merely starts at its edge, so
+              the plane is pulled slightly IN on this side. Solving for the
+              magnification puts the left edge exactly on the frame at 4.5%:
+              at 0 it overshot by ~14px and sliced that off the first column,
+              at 8% symmetric it took ~29% off it.
 
               RIGHT gets 16%, because at ~0.82 it lands well inside the frame
               without it.
@@ -686,7 +688,7 @@ export function ReelWallV6({
           keeps the leftmost column from being cropped again. */}
       <div
         ref={stage}
-        className="grid grid-rows-3 gap-0 tab:absolute tab:left-[3%] tab:-right-[13%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(22deg)_rotateX(4deg)]"
+        className="grid grid-rows-3 gap-0 tab:absolute tab:left-[4.5%] tab:-right-[13%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(22deg)_rotateX(4deg)]"
       >
         {columns.map((column, c) => {
           const speed = COLUMN_SPEED[c];
@@ -850,11 +852,11 @@ export function ReelWallV6({
           ~8% overhang rather than softening a whole scrolling row. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-[5%] bg-[linear-gradient(to_right,var(--fade-stops))] tab:block"
+        className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-[3%] bg-[linear-gradient(to_right,var(--fade-stops))] tab:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 z-[2] hidden w-[10%] bg-[linear-gradient(to_left,var(--fade-stops))] tab:block"
+        className="pointer-events-none absolute inset-y-0 right-0 z-[2] hidden w-[6%] bg-[linear-gradient(to_left,var(--fade-stops))] tab:block"
       />
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —

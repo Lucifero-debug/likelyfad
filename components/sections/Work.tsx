@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { takeReels } from "@/lib/reelOrder";
 import type { Reel } from "@/lib/reels.generated";
@@ -119,13 +119,16 @@ function Tile({
   lane,
   onOpen,
   label,
+  near,
 }: {
   reel: Reel;
   lane: string;
   onOpen: () => void;
   label: string;
+  /** False until the section is close to the viewport — see useNearViewport. */
+  near: boolean;
 }) {
-  const video = useInViewPlay(lane);
+  const video = useInViewPlay(lane, near);
 
   return (
     <button type="button" onClick={onOpen} aria-label={label} className={TILE}>
@@ -167,12 +170,71 @@ function Tile({
   );
 }
 
+/* WHETHER THIS SECTION'S TILES ARE WORTH OBSERVING AT ALL, and it is the
+   difference between a page that scrolls and one that does not.
+
+   THE MEASUREMENT. useInViewPlay observes every tile on the page through one
+   shared IntersectionObserver, and an observer recomputes EVERY target it holds
+   on any frame where something moved. The hero's reel wall runs a continuous
+   marquee, so it moved on every frame — which forced this section's 96 tiles to
+   be re-intersected sixty times a second, each one a rect walked up through
+   transformed and clipped ancestors, while the section itself was far below the
+   fold and could not be seen.
+
+   Profiled on the production build: with this section present the renderer main
+   thread ran 29% busy, 273ms of a 5s trace inside computeIntersections. Remove
+   it and the same page — reel wall, marquee, 3D stage and all — drops to 1.1%.
+   The wall was never the expensive part; the observer over 140 targets was.
+
+   content-visibility ON THE SECTION DOES NOT COVER THIS. It skips RENDERING for
+   an off-screen subtree, which is why it is still there and still worth having,
+   but an IntersectionObserver goes on tracking targets inside a skipped subtree.
+   The only way to stop the work is to stop observing.
+
+   So the tiles register when the section is within a viewport of being reached,
+   and not before. The margin is generous on purpose: a tile that starts
+   observing at the moment it becomes visible has to serve useInViewPlay's dwell
+   and its start-stagger before it plays, which would read as the wall arriving
+   dead. One viewport of warning is enough for the queue to have filled by the
+   time anybody sees it. */
+function useNearViewport<T extends Element>() {
+  const ref = useRef<T>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setNear(entry.isIntersecting),
+      /* A NEGATIVE MARGIN, AND THE HERO IS WHY. This section begins exactly
+           where a 100svh hero ends, so at scroll 0 its top edge is already
+           touching the bottom of the viewport — any positive margin, and even
+           0, reports it as intersecting before the visitor has scrolled a
+           pixel, which is the whole cost this hook exists to avoid. Requiring
+           it to be a fifth of a viewport IN is what makes the flag mean
+           "arriving" rather than "adjacent".
+
+           The cost of the margin is that the tiles get less warning to serve
+           useInViewPlay's dwell and stagger, so the first row can arrive on
+           posters and fill in over the next second. That is the designed
+           fallback and it happens while the section is still sliding up. */
+        { rootMargin: "-20% 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return [ref, near] as const;
+}
+
 export function Work() {
   const [active, setActive] = useState<Reel | null>(null);
   const [paused, setPaused] = useState(false);
+  const [sectionRef, near] = useNearViewport<HTMLElement>();
 
   return (
     <section
+      ref={sectionRef}
       id="work"
       aria-label={work.kicker}
       /* THIS SECTION IS SKIPPED ENTIRELY WHILE IT IS OFF SCREEN, and the reason
@@ -253,13 +315,14 @@ export function Work() {
                  running — see the same note on the hero wall's lane. */
               className={`flex w-max animate-lane-x gap-[clamp(8px,1.2vw,12px)] will-change-transform [&:has(button:hover)]:[animation-play-state:paused] ${
                 ROW_STYLE[ri].reverse ? "[animation-direction:reverse]" : ""
-              } ${paused ? "[animation-play-state:paused]" : ""}`}
+              } ${paused || !near ? "[animation-play-state:paused]" : ""}`}
               style={{ animationDuration: ROW_STYLE[ri].duration }}
             >
               {[...row, ...row].map((clip, i) => (
                 <Tile
                   key={`${ri}-${i}`}
                   reel={clip}
+                  near={near}
                   lane={`work-${ri}`}
                   onOpen={() => setActive(clip)}
                   label={`Play reel ${ri * PER_ROW + (i % PER_ROW) + 1} full size`}
