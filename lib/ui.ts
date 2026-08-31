@@ -144,6 +144,45 @@ export const TEXT_H1 =
   "text-[clamp(2.75rem,1.5rem+4.5vw,4.75rem)] " +
   "lap:text-[clamp(1.9rem,0.24rem+3.97vw,4.7rem)]";
 
+/* ============================================================================
+   THE AUTHORED SIZES — Why us and Pricing only.
+
+   Those two sections are off the ladder above, by request: their type was given
+   as four fixed desktop values, 64 / 32 / 24 / 16. These are those four values
+   made responsive. Each one LANDS EXACTLY on its desktop number at 1440px and
+   holds it above, so the desktop design is the design that was asked for and
+   nothing about it moved — the ramp only runs downward from there.
+
+   THE LADDER COMPRESSES ON THE WAY DOWN, and it has to. On desktop the four
+   steps are 4 : 2 : 1.5 : 1 against each other; at 390px they are 2.3 : 1.4 :
+   1.2 : 1. Holding the desktop ratios would mean a 4× spread anchored on a
+   bottom step that is already at its readable floor — 14px cannot be scaled
+   down to make room for the top, so the top comes down to meet it instead. The
+   ORDER never changes, which is the part that matters: no two steps cross at
+   any width from 360 to 1920.
+
+   Why 32px and not 36 at the bottom of the heading step: Pricing's headline
+   breaks itself with a 
+, and its first half ("Priced to your brief,") is 21
+   characters. At 32px that fits the 358px a 390px phone leaves after the
+   section's 16 padding; above it the line wraps and the hard break buys a third
+   line instead of setting the two the copy intends.
+
+   They live here rather than in the two files because the two files share them
+   — four clamps copied into both would drift the first time one is nudged. */
+
+/* Section headings in Why us and Pricing. 32px → 64px. */
+export const SIZE_64 = "text-[clamp(2rem,1.26rem+3.05vw,4rem)]";
+
+/* Section subtext, and Why us's card headings. 20px → 32px. */
+export const SIZE_32 = "text-[clamp(1.25rem,0.97rem+1.143vw,2rem)]";
+
+/* Pricing's bullets, and Why us's kicker. 17px → 24px. */
+export const SIZE_24 = "text-[clamp(1.0625rem,0.9rem+0.667vw,1.5rem)]";
+
+/* Pricing's kicker, and Why us's card body and card numbers. 14px → 16px. */
+export const SIZE_16 = "text-[clamp(0.875rem,0.83rem+0.19vw,1rem)]";
+
 /* The nav is fixed, so an anchor jump would land a section's top edge under
    it. This also covers the browser's OWN anchor navigation — a pasted #faq
    link, or a hash restored on reload. */

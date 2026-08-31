@@ -7,6 +7,31 @@ import { Pricing } from "@/components/sections/Pricing";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Faq } from "@/components/sections/Faq";
 import { Footer } from "@/components/sections/Footer";
+import { WhyUsV2 } from "@/components/sections/WhyUsV2";
+import { WhyUsV3 } from "@/components/sections/WhyUsV3";
+import { WhyUsV4 } from "@/components/sections/WhyUsV4";
+import { WhyUsV5 } from "@/components/sections/WhyUsV5";
+import { TestimonialsV2 } from "@/components/sections/TestimonialsV2";
+import { TestimonialsV3 } from "@/components/sections/TestimonialsV3";
+import { TestimonialsV4 } from "@/components/sections/TestimonialsV4";
+import { TestimonialsV5 } from "@/components/sections/TestimonialsV5";
+import { FaqV2 } from "@/components/sections/FaqV2";
+import { FaqV3 } from "@/components/sections/FaqV3";
+import { FaqV4 } from "@/components/sections/FaqV4";
+import { FaqV5 } from "@/components/sections/FaqV5";
+import { FooterV2 } from "@/components/sections/FooterV2";
+import { FooterV3 } from "@/components/sections/FooterV3";
+import { FooterV4 } from "@/components/sections/FooterV4";
+import { FooterV5 } from "@/components/sections/FooterV5";
+import { PricingV2 } from "@/components/sections/PricingV2";
+import { PricingV3 } from "@/components/sections/PricingV3";
+import { PricingV4 } from "@/components/sections/PricingV4";
+import { PricingV5 } from "@/components/sections/PricingV5";
+import { HeroV2 } from "@/components/sections/HeroV2";
+import { ReelWallV2 } from "@/components/sections/ReelWallV2";
+import { HeroV3 } from "@/components/sections/HeroV3";
+import { HeroV4 } from "@/components/sections/HeroV4";
+import { ReelWallV4 } from "@/components/sections/ReelWallV4";
 
 /* HERO + REEL WALL SPLIT.
 
@@ -54,14 +79,55 @@ export default function Home() {
           <ReelWall />
         </div>
 
+        {/* V2 is a genuine split pair, so it keeps SPLIT — plus `bg-noir`,
+            which the pair needs: both halves paint their own dark ground, but
+            SPLIT's own padding and gap would show paper through the seams. */}
+        <div className={`${SPLIT} bg-noir`}>
+          <HeroV2 />
+          <ReelWallV2 />
+        </div>
+
+        {/* V3 IS ONE COMPONENT. HeroV3 renders ReelWallV3 inside itself as the
+            stage, so it takes no SPLIT and has no sibling — mounting it beside
+            a second <ReelWallV3 /> renders the diptych twice, and both copies
+            read the same module-level clip list, so every panel shows the same
+            four reels. */}
+        <HeroV3 />
+
+        {/* V4 STACKS. A full-width masthead over a full-bleed filmstrip — put
+            inside SPLIT they land side by side in two columns, which is the one
+            arrangement the design is built not to be. */}
+        <HeroV4 />
+        <ReelWallV4 />
+
         <WhyUs />
+        <WhyUsV2/>
+           <WhyUsV3/>
+           <WhyUsV4/>
+            <WhyUsV5/>
         <Work />
         <Pricing />
+        <PricingV2 />
+        <PricingV3 />
+        <PricingV4 />
+        <PricingV5 />
         <Testimonials />
+          <TestimonialsV2 />
+          <TestimonialsV3 />
+           <TestimonialsV4 />
+           <TestimonialsV5 />
         <Faq />
+        <FaqV2 />
+        <FaqV3 />
+        <FaqV4 />
+        <FaqV5/>
       </main>
 
       <Footer />
+      <FooterV2 />
+      <FooterV3 />
+      <FooterV4 />
+      <FooterV5 />
     </>
   );
 }
