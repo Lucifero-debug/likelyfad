@@ -6,15 +6,26 @@
 
 /* Page gutter and measure.
 
-   1180px below the split breakpoint, 1800px above it. Desktop drops the
-   reading cap so sections match the edge-to-edge hero — but bleeding to the
-   viewport with NO ceiling stretched every row 2400px wide on a 2560px
-   monitor. 1800 is not arbitrary: the split hero's headline clamp reaches its
-   4.7rem ceiling at a 1798px viewport, so this is the one width where the
-   column and the type stop growing together. Above it the extra width goes to
-   the margin rather than into the columns. */
+   THE CEILING IS THE HERO'S STAGE, AND THAT IS THE WHOLE REASON FOR THE
+   NUMBER. HeroV6 lays its copy and the reel wall out inside
+   `max-w-[1520px] px-[clamp(24px,5vw,64px)]`, so 1520 here is not a taste
+   value — it is the one figure that puts every section's first column on the
+   same x as the hero's headline and the wall's left edge. At the 1800 this
+   used to carry, a 1920 monitor started the hero copy at 264px and every
+   section under it at 124px: 140px of drift that reads as the page coming
+   apart below the fold, which is exactly what it looked like. If the hero's
+   stage ever moves, this moves with it — they are one measurement written in
+   two places, and the gutter clamp is deliberately identical for the same
+   reason.
+
+   1800 was keyed to the OLD split hero, whose headline clamp topped out at a
+   1798px viewport. That hero is parked; the number outlived it.
+
+   The 1180 base is inert and kept only as the floor of the pair: `lap:` is
+   961px, so below it the viewport is always narrower than 1180 and the cap
+   never binds. Every width that can see a cap sees this one. */
 export const WRAP =
-  "mx-auto w-full max-w-[1180px] px-[clamp(24px,5vw,64px)] lap:max-w-[1800px]";
+  "mx-auto w-full max-w-[1180px] px-[clamp(24px,5vw,64px)] lap:max-w-[1520px]";
 
 /* THE SPACING SCALE. Every gap on this page is one of the four constants
    below, and they are ORDERED: a section break is the largest number on the
