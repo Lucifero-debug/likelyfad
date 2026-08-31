@@ -655,40 +655,42 @@ export function ReelWallV6({
             two sides are NOT symmetric — which is the thing that is easy to get
             wrong and looks like a bug when you do.
 
-            rotateY sends a point at +x to z = -sin(angle), so the RIGHT edge
-            recedes and the LEFT edge comes toward the viewer. The near side is
-            therefore magnified (scale > 1) and already over-reaches the frame on
+            rotateY sends a point at +x to z = -sin(angle), so at a NEGATIVE
+            angle it is the LEFT edge that recedes and the RIGHT edge that comes
+            toward the viewer — the mirror of the way this used to lean. The near
+            side is magnified (scale > 1) and already over-reaches the frame on
             its own; the far side projects small and falls short. They need
-            opposite treatment:
+            opposite treatment, and the two numbers below swapped sides when the
+            angle went negative:
 
-              LEFT gets a 4.5% INSET, not zero. At 22 degrees the near side
-              projects at ~1.20 and
-              overshoots the frame if the plane merely starts at its edge, so
-              the plane is pulled slightly IN on this side. Solving for the
-              magnification puts the left edge exactly on the frame at 4.5%:
-              at 0 it overshot by ~14px and sliced that off the first column,
-              at 8% symmetric it took ~29% off it.
+              RIGHT gets a 4.5% INSET, not zero. At -22 degrees the near side
+              projects at ~1.20 and overshoots the frame if the plane merely
+              starts at its edge, so the plane is pulled slightly IN on this
+              side. Solving for the magnification puts the right edge exactly on
+              the frame at 4.5%: at 0 it overshot by ~14px and sliced that off
+              the last column, at 8% symmetric it took ~29% off it.
 
-              RIGHT gets 16%, because at ~0.82 it lands well inside the frame
+              LEFT gets 13%, because at ~0.82 it lands well inside the frame
               without it.
 
-          THE RIGHT OVERHANG TRACKS THE TILT and has to be re-derived if the
-          tilt changes: roughly 6% at 8 degrees, 11% at 15, 16% at 22. Too little and the
-          right edge shows paper; too much and the right column is cropped for
-          nothing. The left stays at 0 at any angle in this range.
+          THE LEFT OVERHANG TRACKS THE TILT and has to be re-derived if the
+          tilt changes: roughly 6% at 8 degrees, 11% at 15, 13% at 22. Too little and
+          the left edge shows paper; too much and the left column is cropped for
+          nothing. The right stays a small inset at any angle in this range.
 
           Both numbers are literal because Tailwind scans source TEXT and never
           sees a class built at runtime — see the note at the foot of lib/ui.ts,
           and the one at the head of this file on why they are not constants.
 
-          THE LEFT IS NOW A POSITIVE INSET, NOT ZERO. Dropping the per-column
+          THE NEAR SIDE IS A POSITIVE INSET, NOT ZERO. Dropping the per-column
           translateZ took 52px of recession off the outer columns, so the near
           side magnifies more than it did (~1.18 rather than ~1.11) and over-
-          reaches the frame by more. Pulling the plane 3% in on that side is what
-          keeps the leftmost column from being cropped again. */}
+          reaches the frame by more. Pulling the plane in on that side is what
+          keeps its outermost column from being cropped again — the right one,
+          now that the tilt runs right-to-left. */}
       <div
         ref={stage}
-        className="grid grid-rows-3 gap-0 tab:absolute tab:left-[4.5%] tab:-right-[13%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(22deg)_rotateX(4deg)]"
+        className="grid grid-rows-3 gap-0 tab:absolute tab:-left-[13%] tab:right-[4.5%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(-22deg)_rotateX(4deg)]"
       >
         {columns.map((column, c) => {
           const speed = COLUMN_SPEED[c];
@@ -837,27 +839,21 @@ export function ReelWallV6({
         className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[13%] bg-[linear-gradient(to_left,var(--fade-stops))] tab:inset-x-0 tab:inset-y-auto tab:bottom-0 tab:h-[64px] tab:w-auto tab:bg-[linear-gradient(to_top,var(--fade-stops))]"
       />
 
-      {/* SIDE FADES, DESKTOP ONLY — the pair above has moved to top and bottom
-          by this width, leaving the left and right edges hard.
+      {/* NO SIDE FADES ON DESKTOP, DELIBERATELY. There were two here — a 3%
+          ramp on the left and 6% on the right — softening the edges the tilted
+          plane is cropped by, on the reasoning that a sliced column reads as a
+          bug where a faded one reads as the wall continuing past the frame.
+          They read as a shadow down both sides of the section instead, so they
+          are gone and the crop is a clean cut.
 
-          They exist because of the crop the tilt requires. A plane turned 12
-          degrees has to be WIDER than its frame to still reach the far edge
-          once it recedes, and the width it gains past the frame is width sliced
-          off columns 1 and 4 — there is no arrangement of a tilted plane in an
-          upright box where that is not true. What can change is whether it reads
-          as a cut or as an edge: sliced flat it looks like a bug, faded out it
-          looks like the wall continuing past the frame, which is what it is.
-
-          Narrower than the phone pair at 13, because here they are covering a
-          ~8% overhang rather than softening a whole scrolling row. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-[3%] bg-[linear-gradient(to_right,var(--fade-stops))] tab:block"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 z-[2] hidden w-[6%] bg-[linear-gradient(to_left,var(--fade-stops))] tab:block"
-      />
+          WHAT THAT COSTS, if either edge ever looks wrong again: the overhang
+          on the far side of the tilt is still there (a plane turned 22 degrees
+          has to be wider than its frame to still reach the far edge once it
+          recedes), so the far column IS sliced — it is just sliced sharply now.
+          The fix is the inset/overhang pair on the stage above, not a gradient
+          back here. The phone pair, and the top/bottom pair it becomes from
+          `tab` up, are untouched: those soften the edge the lanes actually
+          enter and leave by. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on
