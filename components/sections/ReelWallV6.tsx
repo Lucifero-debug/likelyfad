@@ -826,17 +826,22 @@ export function ReelWallV6({
           --fade-stops is the page's own smoothstep ramp, keyed to --color-paper
           — a straight alpha ramp lands as a visible band, and these stops hug
           full paper, drop through the middle and tail off flat into nothing. */}
-      {/* THE FADES FOLLOW THE LANE. Sides on a phone, where the rows run
-          left; top and bottom from `tab` up, where the columns run up. A
-          top fade over a horizontal row would cut across every clip instead of
-          softening the edge the content actually enters and leaves by. */}
+      {/* THE FADES ARE `tab`-AND-UP ONLY. From `tab` the lanes run vertically,
+          so a top and a bottom ramp soften the edges the columns actually
+          enter and leave by. On a phone the lanes run horizontally and the
+          matching pair would be side ramps — but at a 13% width against a
+          phone's measure they read as a shadow down both edges of the section
+          rather than as the rows continuing past the frame, which is the same
+          objection that removed the desktop side pair below. So the phone gets
+          a clean crop and no gradient at all: `hidden tab:block`, not a
+          responsive rewrite of the same two elements. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[13%] bg-[linear-gradient(to_right,var(--fade-stops))] tab:inset-x-0 tab:inset-y-auto tab:top-0 tab:h-[64px] tab:w-auto tab:bg-[linear-gradient(to_bottom,var(--fade-stops))]"
+        className="pointer-events-none absolute inset-x-0 top-0 z-[2] hidden h-[64px] bg-[linear-gradient(to_bottom,var(--fade-stops))] tab:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[13%] bg-[linear-gradient(to_left,var(--fade-stops))] tab:inset-x-0 tab:inset-y-auto tab:bottom-0 tab:h-[64px] tab:w-auto tab:bg-[linear-gradient(to_top,var(--fade-stops))]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] hidden h-[64px] bg-[linear-gradient(to_top,var(--fade-stops))] tab:block"
       />
 
       {/* NO SIDE FADES ON DESKTOP, DELIBERATELY. There were two here — a 3%
@@ -851,9 +856,9 @@ export function ReelWallV6({
           has to be wider than its frame to still reach the far edge once it
           recedes), so the far column IS sliced — it is just sliced sharply now.
           The fix is the inset/overhang pair on the stage above, not a gradient
-          back here. The phone pair, and the top/bottom pair it becomes from
-          `tab` up, are untouched: those soften the edge the lanes actually
-          enter and leave by. */}
+          back here. The top/bottom pair above is untouched: it softens the edge
+          the lanes actually enter and leave by, and it is the one pair that
+          never reads as a shadow. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on
