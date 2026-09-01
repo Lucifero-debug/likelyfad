@@ -129,7 +129,8 @@ export const TEXT_SMALL = "text-[clamp(0.875rem,0.85rem+0.1vw,0.95rem)]";
 /* The deck under a heading — hero subline, section lead, pull-quote. THIS is
    the "subheading" half of the 2–3× rule, and the step every heading above is
    measured against. */
-export const TEXT_LEAD = "text-[clamp(1.15rem,1rem+0.46vw,1.5rem)]";
+export const TEXT_LEAD = "text-[clamp(1rem,0.9rem+0.4vw,1.25rem)]";
+
 
 /* Component headings: pillar card titles, FAQ questions. */
 export const TEXT_TITLE = "text-[clamp(1.4rem,1.15rem+0.65vw,1.8rem)]";
