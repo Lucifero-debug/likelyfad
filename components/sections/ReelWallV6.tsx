@@ -5,112 +5,96 @@ import { useInViewPlay } from "@/lib/useInViewPlay";
 import { Lightbox } from "@/components/ui/Lightbox";
 
 /* ============================================================================
-   THE PARALLAX REEL WALL — four columns, one static, three receding.
+   THE REEL WALL — four columns of clips, each drifting upward on its own clock.
 
-   PORTED FROM https://codepen.io/branneman/pen/ALzorM. The pen is 2013 jQuery /
-   Compass / Swipe.js and its stylesheet is commented out in the published
-   version, so the CODE is worth nothing here. What is worth everything is its
-   one function:
+   ONE MOTION, AND IT IS THE ONLY ONE. Every lane runs a slow continuous
+   marquee — pure CSS, no JS per frame — and nothing in this component reads the
+   scroll position any more. The wall looks the same while a visitor sits
+   reading the headline as it does while they scroll past it, which is the whole
+   of the change: the movement belongs to the wall, not to the gesture.
+
+   WHAT USED TO BE HERE, because the shape of the file still shows it. This was
+   a port of https://codepen.io/branneman/pen/ALzorM, whose one idea was
 
      getTop = (pos, col) => -(pos * Math.pow(1.5, col - 1))
 
-   FOUR PROPERTIES ARE THE EFFECT. Every one of them is load-bearing, and each
-   has a specific failure mode when it is "improved":
+   — a scroll-driven parallax: column 1 pinned as a reference plane, every
+   column after it receding 1.5x faster than the last, uncapped. All of it is
+   gone. The scroll and resize listeners, the rAF write loop, the per-column
+   speed table, the drift layer each track was nested inside, the --shift
+   custom property and the floored-modulus wrap that kept an unbounded offset
+   inside one set of content — none of them are load-bearing once nothing
+   responds to the page moving, and every one of them was a cost paid on the
+   gesture path.
 
-     1. COLUMN 1 NEVER MOVES *ON SCROLL*. It is not in the update loop — it is
-        the reference plane the other three recede from. Give it a scroll speed
-        and the other three stop reading as depth and start reading as four
-        things sliding. (It does carry the ambient lane described further down,
-        which is a deliberate departure from the reference — see THE AMBIENT
-        LANE. Scroll response is what property 1 is actually protecting.)
+   WHAT SURVIVED IT is the part that was never about scroll in the first place:
 
-     2. EVERY MOVING COLUMN GOES THE SAME WAY — UPWARD. The value is negative
-        for all of them. Alternating the directions cancels the sense of one
-        plane receding behind another and reads as churn.
+     THE DEPTH RATIO. Each lane still loops SPEED_RATIO times faster than the
+     one before it, so the ordering the parallax used to draw ON SCROLL is
+     still drawn — continuously, and at rest. See AMBIENT_DURATION.
 
-     3. SPEED IS PROPORTIONAL TO RAW SCROLL, UNCAPPED. Column 2 at 1.5x, column
-        3 at 2.25x, column 4 at 3.375x, forever. Normalising scroll to 0..1
-        across the section, or capping the travel, converts the parallax into a
-        gentle settle — the continuous unbounded differential IS the effect.
+     THE 3D STAGE. Its tilt is one static transform on the grid, not a scroll
+     effect, and it is what makes the depth true when nothing is moving at all.
+     It is also the reason the parallax was never the whole illusion.
 
-     4. THE MULTIPLIER IS A CONSTANT RATIO. Each column is faster than the last
-        by the same factor, which is what makes it read as receding depth
-        rather than as three arbitrary speeds.
+     THE SEAMLESS LOOP AND ITS INVARIANT, both below.
 
-   HOW UNCAPPED TRAVEL FITS IN A FIXED-HEIGHT PANEL, which is the one real
-   problem here and is NOT solved by capping. Each column renders its clip list
-   several times over and every offset is taken modulo one set's height:
-
-     y = -(scrollDelta * SPEED_RATIO^(col-1))  mod  oneSetHeight
-
-   The column then travels without bound while never running out of content and
-   never showing a gap. Column 4 moves at 3.375x forever inside a fixed box.
-
-   TWO MOTIONS, AND THEY ARE NOT THE SAME MOTION — this is the thing to hold on
-   to when reading the markup, because the wall looks wrong the moment they get
-   confused for each other:
-
-     THE AMBIENT LANE is self-driven and never stops. Pure CSS, no JS per frame,
-     and it is what makes the wall feel alive while the visitor is sitting still
-     reading the headline.
-
-     THE PARALLAX is scroll-driven and has no motion of its own. With the page
-     still it contributes exactly nothing.
-
-   THEY LIVE ON SEPARATE ELEMENTS BECAUSE THEY BOTH WRITE `transform`, and an
-   element has one. Nesting them composes the two translates for free, the way
-   the browser is built to:
-
-     column cell        relative, clips the lane
-       drift layer      transform: the parallax offset (JS writes it)
-         track          animation: wall6-lane, translateY(0 -> -1 set)
-           clip xN      the clip list, rendered COLUMN_SETS[c] times
+   HOW AN ENDLESS LANE FITS IN A FIXED-HEIGHT PANEL. Each column renders its
+   clip list several times over, and the keyframe slides the track by exactly
+   one set — 100% / --sets — so the frame at the end of the cycle is pixel-
+   identical to the frame at the start and the jump back is invisible. The
+   column travels forever inside a box that never changes size.
 
    THE INVARIANT THAT MAKES IT SEAMLESS IS `oneSetHeight >= containerHeight`.
-   Each offset stays in (-oneSetHeight, 0], so the visible window is always
-   inside real content and every wrap point is pixel-identical because every set
-   is the same set. What changes per column is how many offsets stack — see
-   COLUMN_SETS, which is where the copy count is decided. Four 9:16 clips in a
-   column this wide run ~2.5x the container at every viewport the wall renders
-   at, so there is real slack; `debug` prints both numbers if you ever want to
-   check it against a layout change.
+   The lane's offset stays in (-oneSetHeight, 0], so the visible window is
+   always inside real content and every wrap point is identical because every
+   set is the same set. What changes per column is how many copies stack — see
+   COLUMN_SETS, which is where the count is decided. Four 9:16 clips in a column
+   this wide run ~2.5x the container at every viewport the wall renders at, so
+   there is real slack; `debug` prints both numbers if you ever want to check it
+   against a layout change.
 
    SET HEIGHT IS SPACED WITH margin-bottom, NOT A FLEX gap, AND THAT IS
-   LOAD-BEARING. N items separated by `gap` have N-1 gaps, so a third of a
-   three-set track is four clips plus 3.67 gaps while one true set is four clips
-   plus four — the loop point lands a fraction of a gap out and the column
-   visibly hitches once per cycle. A bottom margin on every item, including the
-   last, makes each division exact. Flex containers include item margins in
-   their content size, which is what makes `offsetHeight / sets` the exact
-   figure. (The homepage wall has this error at its 4px gap: a 2px hitch every
-   78 seconds, which is why nobody has ever seen it.)
+   LOAD-BEARING. N items separated by `gap` have N-1 gaps, so half of a two-set
+   track is four clips plus 3.5 gaps while one true set is four clips plus four
+   — the loop point lands half a gap out and the column visibly hitches once per
+   cycle. A bottom margin on every item, including the last, makes each division
+   exact. Flex containers include item margins in their content size, which is
+   what makes `offsetHeight / sets` the exact figure. (The homepage wall has
+   this error at its 4px gap: a 2px hitch every 78 seconds, which is why nobody
+   has ever seen it.)
 
-   SCROLL IS READ FROM THE POINT THE WALL ENTERS THE VIEWPORT, not from absolute
-   page scroll, so the wall starts neutral rather than pre-scrolled — mounted
-   400px down a page, absolute scrollY would have column 4 already 1350px into
-   its travel on the first frame.
-
-   THE PEN LISTENS TO `scroll` DIRECTLY AND ANIMATES margin-top. Both are
-   replaced: every event between two frames coalesces into one rAF read, and the
-   write is transform: translate3d, which stays on the compositor and never
-   touches layout.
+   THE LANES STILL STOP OFF SCREEN, and that is the one observer left in the
+   file. An IntersectionObserver toggles `data-off` on the box, which pauses
+   every track inside it — four CSS animations translating a 3D-rotated plane
+   full of <video> elements is the most expensive thing this component can do,
+   and a tilted plane is the worst case for it: the compositor cannot take its
+   cheap path through a rotated layer, so every frame of an animation nobody can
+   see was still being rasterised. Playback is handled separately and per tile
+   by useInViewPlay.
    ========================================================================== */
 
 /* ---------------------------------------------------------------------------
-   THE MULTIPLIER. This is the one number to change if the effect looks wrong.
+   THE MULTIPLIER — now the DEPTH RATIO OF THE LANES, and the one number to
+   change if the wall reads flat.
 
-   1.5 is the reference value. 1.3 is calmer, 1.7 more aggressive — and if the
-   column count ever changes, this has to change with it, since the ratio
-   compounds over every lane. Change this and nothing else: capping the travel,
-   alternating the directions or giving column 1 a speed are the three edits
-   that break the effect rather than tune it. */
+   It was the parallax's ramp first and the ambient lanes borrowed it; with the
+   parallax gone it does only the second job, and unchanged, because that is
+   what keeps the recession visible at rest. 1.5 is the reference value. 1.3 is
+   calmer, 1.7 more aggressive — and if the column count ever changes this has
+   to change with it, since the ratio compounds over every lane.
+
+   THE DIRECTIONS MUST STAY THE SAME WAY UP. Every lane runs upward, which is
+   what makes four differing speeds read as one plane receding rather than as
+   churn. Alternating them is the one edit here that breaks the effect rather
+   than tuning it. */
 const SPEED_RATIO = 1.5;
 
 /* HOW MANY LANES THE WALL DIVIDES ITS WIDTH INTO.
 
-   FOUR IS THE BRIEF'S NUMBER AND THE RATIO IS BUILT AROUND IT. The last column
-   runs at SPEED_RATIO^(COLUMNS-1), so the two are not independent: six columns
-   on a 1.5 ramp would put the last lane at 7.6x raw scroll, which is not depth,
+   FOUR IS THE BRIEF'S NUMBER AND THE RATIO IS BUILT AROUND IT. The last lane
+   loops at SPEED_RATIO^(COLUMNS-1), so the two are not independent: six columns
+   on a 1.5 ramp would put the last lane at 7.6x the first, which is not depth,
    it is a blur. Change one and the other has to be re-derived.
 
    IT IS ALSO WHAT DECIDES CLIP SIZE, since a clip is w-full of its column. Four
@@ -119,43 +103,31 @@ const SPEED_RATIO = 1.5;
    anything in this file — see WALL_HEIGHT and WALL_WIDTH in HeroV6. */
 const COLUMNS = 4;
 
-/* SPEED_RATIO^(col-1) for the reference's 1-indexed columns, which is 1.5,
-   2.25 and 3.375 for columns 2, 3 and 4.
-
-   INDEX 0 IS 0, NOT 1, and that is the whole of property 1 above. The pen's
-   formula returns 1 for column 1 — that column is simply never passed to it,
-   because it is the plane everything else is measured against. Writing the
-   exclusion as a zero here keeps it in one table instead of a special case
-   buried in the write loop. */
-const COLUMN_SPEED: number[] = Array.from({ length: COLUMNS }, (_, i) =>
-  i === 0 ? 0 : Math.pow(SPEED_RATIO, i)
-);
-
 /* ---------------------------------------------------------------------------
-   THE AMBIENT LANE — the second motion, and the one deliberate departure from
-   the reference.
+   THE LANE — the wall's only motion, and now the whole effect.
 
-   THE PEN'S WALL IS DEAD WHEN THE PAGE IS STILL. Everything it does is a
-   function of scroll position, so a visitor who lands on the hero and reads it
-   sees four frozen columns until they touch the wheel. That is faithful, and on
-   a hero it is wrong — so every column also runs a slow continuous loop
-   underneath the parallax.
+   IT WAS THE SECOND OF TWO. The pen's wall is dead when the page is still:
+   everything it does is a function of scroll position, so a visitor who lands
+   on the hero and reads it sees four frozen columns until they touch the wheel.
+   That was always the wrong behaviour for a hero, so every column also ran a
+   slow continuous loop underneath the parallax. Removing the parallax leaves
+   the loop holding the wall up on its own — which is what it was already doing
+   for every visitor who had not scrolled yet.
 
-   THIS BREAKS PROPERTY 1 AS WRITTEN, and knowingly: column 1 is no longer
-   absolutely still. What it keeps is the part that matters — column 1 is still
-   the only column that does not respond to SCROLL, so it remains the plane the
-   other three visibly recede from as you move. It just breathes while it does
-   it.
+   THE LANE SPEEDS CARRY THE DEPTH ORDERING NOW. Each column loops SPEED_RATIO
+   times faster than the one before it, so the recession the parallax used to
+   draw while you moved is drawn continuously instead. Duration is the inverse
+   of speed, hence the division.
 
-   THE AMBIENT SPEEDS FOLLOW THE SAME RATIO AS THE PARALLAX, which is why this
-   reads as one effect rather than two stacked ones: each column loops
-   SPEED_RATIO times faster than the one before it, so the depth ordering the
-   parallax draws on scroll is already there at rest. Duration is the inverse of
-   speed, hence the division.
+   COLUMN 1 IS NO LONGER A REFERENCE PLANE, and there is nothing left for it to
+   be one for: it is simply the slowest lane. 180s is about 6px per second —
+   under the threshold where the eye tracks it as travel rather than as the wall
+   being alive. Column 4 lands near 21px/s, which is still calm.
 
-   180s on column 1 is about 6px per second — under the threshold where the eye
-   tracks it as travel rather than as the wall being alive. Column 4 lands near
-   21px/s, which is still calm. */
+   THIS IS THE ONE NUMBER THAT NOW SETS HOW MUCH THE WALL MOVES. With the
+   parallax carrying the fast half of it, these could stay slow; if the wall
+   reads static since the change, this is the dial — not the ratio above, which
+   would pull the columns apart rather than speed them up together. */
 const AMBIENT_BASE_SECONDS = 180;
 
 const AMBIENT_DURATION: string[] = Array.from(
@@ -166,24 +138,25 @@ const AMBIENT_DURATION: string[] = Array.from(
 /* HOW MANY COPIES OF THE CLIP LIST EACH COLUMN RENDERS, and this is the number
    that stops the wall going blank at an unlucky moment.
 
-   Each wrapping offset can reach a full set. Column 1 has ONE of them (the
-   marquee), so its content only has to outlast a single set: two copies, and
-   the bottom edge never rises above the bottom of the box. The moving columns
-   have TWO independent offsets (marquee AND parallax) which can be near their
-   maximum at the same time, so they need three.
+   TWO EVERYWHERE NOW, AND THAT IS A DIRECT DIVIDEND OF DROPPING THE PARALLAX.
+   The count is decided by how many independent wrapping offsets a lane carries,
+   because each one can reach a full set at the same moment as the others:
 
-   THIS IS THE COMPONENT'S BIGGEST SINGLE COST and the number to come back to
-   when the wall feels heavy. Every copy is four more <video> elements per lane:
-   [2,3,3,3] is 44 of them, [3,4,4,4] is 60. Nothing else in here scales like it.
+     one offset  (the lane alone)      -> needs (sets - 1) x set >= container
+     two offsets (lane AND parallax)   -> needs (sets - 2) x set >= container
 
-   THE COUNT IS DECIDED BY THE WORST VIEWPORT, NOT THE TYPICAL ONE. A lane needs
-   enough content that no combination of its offsets can pull the end of it into
-   frame, and each wrapping offset can reach a full set:
+   Every lane used to be the second case except column 1, hence [2,3,3,3]. With
+   the drift layer gone every lane is the first case, so every lane needs two
+   copies and the requirement is `set >= container` — the same relationship
+   column 1 has always satisfied, now applied to all four.
 
-     the static lane has ONE (the marquee)   -> needs (sets - 1) x set >= container
-     a moving lane has TWO (marquee + drift) -> needs (sets - 2) x set >= container
+   IT IS THE COMPONENT'S BIGGEST SINGLE COST, which is what makes this the best
+   part of the change: every copy is four more <video> elements per lane, so
+   [2,3,3,3] was 44 of them and [2,2,2,2] is 32. Twelve fewer media elements
+   decoding, compositing and holding memory, for identical output. Nothing else
+   in here scales like this number.
 
-   With three and two copies that comes to `set >= container` on both. The
+   THE REQUIREMENT IS CHECKED AT THE WORST VIEWPORT, NOT THE TYPICAL ONE. The
    binding case is a phone held wide — around 760px, right below `tab`, where
    the wall is ~684px across. Four clips have to beat that on their own, which
    is what sets the floor under the clip clamp: 22vw lands them at ~167px there,
@@ -191,17 +164,21 @@ const AMBIENT_DURATION: string[] = Array.from(
 
    `debug` prints the two numbers it is checking, and says SET TOO SHORT if the
    relationship ever stops holding. */
-const COLUMN_SETS = [2, 3, 3, 3];
+const COLUMN_SETS = [2, 2, 2, 2];
 
 /* ---------------------------------------------------------------------------
-   THE 3D STAGE — what turns four parallax columns into a gallery with depth.
+   THE 3D STAGE — what turns four drifting columns into a gallery with depth.
 
-   THE PARALLAX ALONE IS FLAT. Columns moving at different speeds is a depth
-   CUE, but every column still sits on the same plane at the same size, so the
-   recession only exists while you are scrolling. Placing them in actual 3D
-   makes the depth true at rest as well: the outer columns are further away, so
-   they are smaller and angled, and the parallax ramp then agrees with something
-   the eye can already see.
+   FOUR SPEEDS ALONE ARE FLAT. Columns moving at different rates is a depth CUE,
+   but every column still sits on the same plane at the same size, so the
+   recession is something the eye has to infer from motion. Placing them in
+   actual 3D makes the depth true before anything moves at all: the outer
+   columns are further away, so they are smaller and angled, and the speed ramp
+   then agrees with something already on screen.
+
+   IT MATTERS MORE SINCE THE PARALLAX CAME OUT, not less. The scroll ramp was
+   the loudest depth cue in the section and it is gone; the tilt is what is left
+   holding the illusion up, alongside the lane ratio.
 
    THE WHOLE STAGE TILTS AS ONE FLAT PLANE, and there is a hard reason it is
    not four columns each placed at its own depth.
@@ -374,12 +351,14 @@ export function ReelWallV6({
   /* The grid. Measured rather than the box, because since the 3D stage it is
      the taller of the two — see the note in `report`. */
   const stage = useRef<HTMLDivElement>(null);
-  /* TWO REFS PER COLUMN BECAUSE THE TWO MOTIONS LIVE ON TWO ELEMENTS. Both
-     write `transform`, and an element has one — nesting them is what lets the
-     browser compose the marquee's translate with the parallax's for free. The
-     drift layer is written to by JS; the track is measured and animated by CSS,
-     and nothing in this file ever writes to it. */
-  const drifts = useRef<(HTMLDivElement | null)[]>([]);
+  /* ONE REF PER COLUMN, AND IT USED TO BE TWO. The two motions lived on two
+     elements because both write `transform` and an element has one, so the
+     marquee's translate was nested inside the parallax's and the browser
+     composed them for free. With the parallax gone the drift layer has nothing
+     to write, so it is gone too and the track is the whole lane.
+
+     NOTHING IN THIS FILE WRITES TO A TRACK. It is animated entirely by CSS; the
+     ref exists so `debug` can measure one, and for no other reason. */
   const tracks = useRef<(HTMLDivElement | null)[]>([]);
   const readout = useRef<HTMLPreElement>(null);
 
@@ -401,186 +380,115 @@ export function ReelWallV6({
     const el = box.current;
     if (!el) return;
 
-    /* Read once rather than subscribed, which is the call every other scroll
+    /* Read once rather than subscribed, which is the call every other motion
        effect in this repo makes: a visitor who changes the setting mid-session
        gets it on their next navigation. */
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    /* ALL MOVEMENT OFF, NOT SLOWED. No listener is attached, so no transform is
-       ever written and every track stays at its authored y = 0 — the wall as
-       laid out, not a degraded variant of it. Autoplaying video is itself
-       movement, so it is off under the same preference. */
+    /* ALL MOVEMENT OFF, NOT SLOWED. Autoplaying video is itself movement, so it
+       goes off under the same preference; the lanes are handled a level up, by
+       the reduced-motion block in globals.css, which flattens every animation
+       on the page. Nothing below this line needs to run in that state — there
+       is no motion left to gate. */
     setPlay(!reduced);
     if (reduced) return;
 
-    let frame = 0;
     let visible = false;
-    /* Page scroll at the moment the wall first entered the viewport. Null until
-       then, and never re-captured: resetting it on a second entry would jump
-       every column back to neutral in the middle of the effect. */
-    let origin: number | null = null;
-    /* Size of ONE set of clips per lane, ALONG THE AXIS THAT LANE RUNS — the
-       modulus. Index 0 is unused; the static lane has no parallax to wrap. */
+
+    /* Size of ONE set of clips per lane, ALONG THE AXIS THAT LANE RUNS. Only
+       `debug` reads it: the lane wraps itself in CSS, so nothing here needs the
+       number to make the wall work — it needs it to say whether the wall CAN
+       work at this viewport. */
     const setHeight: number[] = [];
     /* True below `tab`, where the wall is three horizontal rows rather than four
-       vertical columns. Set by `measure`, read by `write`; the two must agree on
-       the axis or the wrap lands mid-content. */
+       vertical columns. */
     let horizontal = false;
 
     /* WHAT THE INVARIANT IS MEASURED AGAINST, and getting it wrong here is
        silent: the wall stays full at most phases and goes briefly bare at one.
 
-       On the 3D stage the grid OVERHANGS the box by 7% on each edge, so a column
-       cell is taller than the wall's visible height and the box crops the
+       On the 3D stage the grid OVERHANGS the box by 20% on each edge, so a
+       column cell is taller than the wall's visible height and the box crops the
        difference — the set has to outlast the CELL, not the box. Below `tab`
        there is no overhang and the lane runs sideways, so the thing to beat is
        the wall's own WIDTH. */
     const cellHeight = () =>
       horizontal ? el.clientWidth : stage.current?.clientHeight ?? el.clientHeight;
 
-    const report = () => {
-      const pre = readout.current;
-      if (!pre) return;
-      const delta = origin === null ? 0 : window.scrollY - origin;
-      const cell = cellHeight();
-      pre.textContent = [
-        `reduced motion : ${reduced}`,
-        `on screen      : ${visible}`,
-        `scrollDelta    : ${delta.toFixed(0)}px`,
-        `set / cell     : ${(setHeight[1] ?? 0).toFixed(0)} / ${cell}` +
-          `${(setHeight[1] ?? 0) < cell ? "  <- SET TOO SHORT, WILL GAP" : ""}`,
-        `slowest/fastest: ${COLUMN_SPEED[1].toFixed(2)}x / ${COLUMN_SPEED[COLUMNS - 1].toFixed(2)}x`,
-        /* `|| 1` not `?? 1`: an unmeasured set is 0, not undefined, and a
-           modulus of zero makes the readout print NaN. */
-        `last lane y    : ${wrap(-(delta * COLUMN_SPEED[COLUMNS - 1]), setHeight[COLUMNS - 1] || 1).toFixed(1)}px`,
-      ].join("\n");
-    };
-
-    /* Divide by the column's OWN set count, not a constant — the static column
-       renders two copies and the moving ones three. The margin-bottom
-       construction is what makes this exact rather than approximate: with a
-       flex `gap` the divisions land half a gap out. See the note at the top. */
-    /* THE MODULUS IS THE SET'S SIZE ALONG WHICHEVER AXIS THE LANE RUNS, and
-       below `tab` that is the horizontal one — the wall is three rows there, not
-       four columns. Measuring the wrong axis does not fail loudly: the wrap
-       lands at an arbitrary point in the content and the row visibly jumps once
-       per cycle.
-
-       761 IS `tab` FROM globals.css, WRITTEN OUT. It is the one number in this
+    /* 761 IS `tab` FROM globals.css, WRITTEN OUT. It is the one number in this
        file duplicated from the stylesheet, and the layout classes below have to
        agree with it. There is no way to read a Tailwind breakpoint from script,
        and matching on a CSS class would be worse — this is at least a single
-       named place. A breakpoint crossing is a resize, so the ResizeObserver
-       already re-runs this; no separate media listener is needed. */
+       named place.
+
+       Divide by the column's OWN set count. The margin-bottom construction is
+       what makes this exact rather than approximate: with a flex `gap` the
+       divisions land half a gap out. See the note at the top. */
     const measure = () => {
       horizontal = !window.matchMedia("(min-width: 761px)").matches;
-      for (let i = 1; i < COLUMNS; i++) {
+      for (let i = 0; i < COLUMNS; i++) {
         const track = tracks.current[i];
         if (!track) continue;
-        /* A row hidden at this width measures 0 and is skipped in `write`. */
+        /* A row hidden at this width measures 0, and reads as 0 in the readout,
+           which is what it should say. */
         setHeight[i] =
           (horizontal ? track.offsetWidth : track.offsetHeight) / COLUMN_SETS[i];
       }
       report();
     };
 
-    const write = () => {
-      frame = 0;
-      if (origin === null) return;
-
-      /* RAW SCROLL, UNCAPPED, measured from where the wall came into view. No
-         normalisation, no ceiling — see property 3. */
-      const delta = window.scrollY - origin;
-
-      /* Column 0's drift layer is skipped entirely — it has no scroll response
-         and nothing here ever touches it. Its track still runs the ambient lane;
-         that is CSS and owes this loop nothing. */
-      for (let i = 1; i < COLUMNS; i++) {
-        const layer = drifts.current[i];
-        const set = setHeight[i];
-        if (!layer || !set) continue;
-        /* ONE SCALAR, NOT A TRANSFORM. Which axis it applies to is a media
-           query on the element, so the layout decides the direction and this
-           loop stays identical at both widths — the alternative is branching on
-           `horizontal` here and writing two different transform strings, which
-           puts the breakpoint in two places that can disagree. */
-        layer.style.setProperty(
-          "--shift",
-          `${wrap(-(delta * COLUMN_SPEED[i]), set)}px`
-        );
-      }
-      report();
+    const report = () => {
+      const pre = readout.current;
+      if (!pre) return;
+      const cell = cellHeight();
+      const set = setHeight[0] ?? 0;
+      pre.textContent = [
+        `reduced motion : ${reduced}`,
+        `on screen      : ${visible}`,
+        `lanes          : ${AMBIENT_DURATION[0]} .. ${AMBIENT_DURATION[COLUMNS - 1]}`,
+        `sets per lane  : ${COLUMN_SETS.join(", ")}`,
+        `set / cell     : ${set.toFixed(0)} / ${cell}` +
+          `${set < cell ? "  <- SET TOO SHORT, WILL GAP" : ""}`,
+      ].join("\n");
     };
 
-    const onScroll = () => {
-      /* Coalesce every event between two frames into one read, and only while
-         the wall is on screen. Never an unthrottled handler. */
-      if (!visible || frame) return;
-      frame = requestAnimationFrame(write);
-    };
+    /* THE ONLY OBSERVER LEFT ON THE HOT PATH, and it is not a motion effect —
+       it is what stops one. `data-off` pauses every lane inside the box the
+       moment the wall leaves the viewport; see the note at the top of the file
+       for why four animations on a tilted plane are worth this much trouble.
 
-    measure();
-
-    /* MEASURING ONCE IS NOT ENOUGH, and it fails in the way that is hardest to
-       see: a wall wired correctly that refuses to move. A set's height depends
-       on the column's width, which depends on a grid still settling when the
-       effect first runs, and on the display font, which lands later and can
-       reflow the copy column beside it. Measure too early and the modulus is
-       computed from a track that has not got its real height yet. */
-    const ro = new ResizeObserver(() => {
-      measure();
-      write();
-    });
-    for (let i = 1; i < COLUMNS; i++) {
-      const track = tracks.current[i];
-      if (track) ro.observe(track);
-    }
-
-    /* THE CONTAINER OBSERVER DOES TWO JOBS. It captures the scroll origin the
-       first time the wall comes into view, which is what makes the wall start
-       neutral instead of pre-scrolled. And it short-circuits the scroll handler
-       once the hero is gone.
-
-       PLAYBACK IS PAUSED OFF SCREEN BY useInViewPlay, which observes each tile
-       individually: when the hero leaves the viewport every tile in it leaves
-       too, so all playback stops. Per-tile rather than per-wall is strictly
-       more than the requirement — it also keeps the clips scrolled past the top
-       of the wall from decoding while the ones below them are on screen. */
+       PLAYBACK IS PAUSED SEPARATELY BY useInViewPlay, which observes each tile
+       individually — strictly more than this needs, and it also keeps the clips
+       scrolled past the top of the wall from decoding while the ones below them
+       are on screen. */
     const io = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      /* THE LANES STOP WHEN THE WALL IS NOT ON SCREEN, and this is the single
-         most expensive thing the component was doing.
-
-         The marquees are CSS animations, so nothing in JS was ever gating them:
-         four tracks kept translating a 3D-rotated plane holding sixty video
-         elements for as long as the page was open, including every second after
-         the hero had scrolled away. A tilted plane is the worst case for that —
-         the compositor cannot take its cheap path through a rotated layer, so
-         every frame of an animation nobody can see was still being rasterised.
-
-         The clips themselves were already handled: useInViewPlay observes each
-         tile and pauses it on the way out. This is the other half of it. */
       el.toggleAttribute("data-off", !visible);
-      if (visible) {
-        if (origin === null) origin = window.scrollY;
-        write();
-      } else {
-        report();
-      }
+      report();
     });
     io.observe(el);
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    /* MEASURING IS `debug`-ONLY, AND SO IS THE OBSERVER THAT REPEATS IT. The
+       wall no longer needs a single measurement to run correctly — the wrap is
+       CSS arithmetic against the track's own size — so the ResizeObserver that
+       used to keep the modulus honest through font swaps and grid settling now
+       exists purely to keep the readout honest. Off by default, off in
+       production, no cost to anyone not looking at it. */
+    let ro: ResizeObserver | undefined;
+    if (debug) {
+      measure();
+      ro = new ResizeObserver(measure);
+      for (let i = 0; i < COLUMNS; i++) {
+        const track = tracks.current[i];
+        if (track) ro.observe(track);
+      }
+    }
 
     return () => {
       io.disconnect();
-      ro.disconnect();
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) cancelAnimationFrame(frame);
+      ro?.disconnect();
     };
-  }, [columns]);
+  }, [debug]);
 
   return (
     <div
@@ -620,9 +528,9 @@ export function ReelWallV6({
           the same way and recede by different amounts, which is not a shallow
           version of the effect, it is a wall that looks accidentally skewed. The
           depth needs the symmetric four to read at all, so below `tab` the stage
-          is a plain full-height grid and the parallax carries it alone. The
-          overhang goes with it: cropping a grid that is not in 3D would just
-          throw away the outer columns for nothing.
+          is a plain full-height grid and the lanes carry it alone. The overhang
+          goes with it: cropping a grid that is not in 3D would just throw away
+          the outer columns for nothing.
 
           THE WHOLE STAGE IS THE THING THAT TILTS, and that is the difference
           between reading as 3D and not. Rotating each column a few degrees on
@@ -693,7 +601,6 @@ export function ReelWallV6({
         className="grid grid-rows-3 gap-0 tab:absolute tab:-left-[13%] tab:right-[4.5%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(-22deg)_rotateX(4deg)]"
       >
         {columns.map((column, c) => {
-          const speed = COLUMN_SPEED[c];
           const sets = COLUMN_SETS[c];
 
           return (
@@ -704,9 +611,9 @@ export function ReelWallV6({
                  without this the last two wrap onto a SECOND ROW and the wall
                  becomes a 2x2 block of half-height cells. Hiding them is what
                  makes the narrow layout two columns of full-height clips — and
-                 columns 1 and 2 keep exactly the speeds they have at every other
-                 width, static and 1.5x, because nothing about the speed table
-                 is width-dependent.
+                 columns 1 and 2 keep exactly the lane speeds they run at every
+                 other width, 180s and 120s, because nothing about the ratio is
+                 width-dependent.
 
                  overflow-hidden per cell as well as on the box: a moving track
                  runs past the bottom of its cell, and without a clip here that
@@ -728,94 +635,83 @@ export function ReelWallV6({
                 c > 2 ? "hidden tab:block" : ""
               }`}
             >
-              {/* ---- drift layer: parallax only, written by JS ---- */}
+              {/* ---- the lane. One element, driven entirely by CSS ----
+
+                  THERE WAS A DRIFT LAYER WRAPPED AROUND THIS, holding the
+                  parallax offset as a translate3d fed by a --shift custom
+                  property, because two motions cannot share one `transform`.
+                  With one motion left the nesting has no job, and removing it
+                  takes a composited layer per column off the page. */}
               <div
                 ref={(node) => {
-                  if (speed > 0) drifts.current[c] = node;
+                  tracks.current[c] = node;
                 }}
-                /* will-change ON THE SCROLL-DRIVEN COLUMNS ONLY. Column 1's
-                   drift layer is never written to, so promoting it would cost a
-                   composited layer for nothing — its motion is one level down,
-                   on the track, which carries its own. */
-                /* THE AXIS IS A MEDIA QUERY, NOT A BRANCH IN JS. `write` sets a
-                   single --shift scalar; these two rules decide whether it
-                   lands on X or Y, so the breakpoint lives in the stylesheet
-                   with the layout that depends on it. */
-                className="[transform:translate3d(var(--shift,0px),0,0)] tab:[transform:translate3d(0,var(--shift,0px),0)]"
+                style={{
+                  /* Read by the wall6-lane keyframe, which slides the track by
+                     exactly 100%/sets — one set, whatever the count. */
+                  "--sets": sets,
+                  animationDuration: AMBIENT_DURATION[c],
+                } as CSSProperties}
+                /* NO will-change HERE, DELIBERATELY, AND IT USED TO BE ON THIS
+                   AND ON THE DRIFT LAYER BOTH. It is the standard advice for an
+                   animated transform and it is the wrong call at this size: a
+                   track is COLUMN_SETS x 4 clips stacked, which at desktop
+                   widths is between 2,800 and 4,200px tall. will-change pins
+                   an element that big as a composited layer for the lifetime
+                   of the page — four of them now, each re-rasterised at whatever
+                   scale the tilted plane projects it to, and none of it
+                   released when the lanes pause off screen, which is exactly
+                   when the memory should be going back.
+
+                   The browser promotes a running transform animation on its
+                   own and can tile, rasterise only what is near the viewport,
+                   and drop the layer when the animation stops. Saying nothing
+                   gets all of that; will-change opts out of it.
+
+                   Row on a phone, column from `tab` up — and the lane keyframe
+                   flips with it. Both carry the same --sets contract, so the
+                   wrap arithmetic is identical on either axis. */
+                /* w-max IS LOAD BEARING IN THE ROW LAYOUT, and without it the
+                   phone wall is wrong in two ways at once. A flex container is
+                   block-level, so its width would be the CELL's, not the
+                   clips' — the keyframe's -100%/--sets would slide the track by
+                   half the CELL rather than half its content, and `debug`'s
+                   measure would report the wall's width as the set. max-content makes the track as wide as what is in
+                   it, which is what both of those numbers are supposed to be.
+                   In the column layout the height is content-driven already,
+                   so it goes back to auto. */
+                /* HOVERING A CLIP STOPS ITS OWN LANE, and only that lane. A
+                   card you are trying to click should not be sliding out from
+                   under the pointer, and now that the lane is the only motion
+                   in the wall, stopping it stops the card dead — which it could
+                   not do while a scroll offset was moving underneath.
+                   `:has(button:hover)` rather than a bare :hover on the track:
+                   the track is far taller than the cell it shows through, and a
+                   bare hover would also fire in the gaps between clips, which
+                   reads as the wall stalling at random. */
+                className="flex w-max animate-wall6-lane-x [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col"
               >
-                {/* ---- track: ambient lane only, driven by CSS ---- */}
-                <div
-                  ref={(node) => {
-                    tracks.current[c] = node;
-                  }}
-                  style={{
-                    /* Read by the wall6-lane keyframe, which slides the track by
-                       exactly 100%/sets — one set, whatever the count. */
-                    "--sets": sets,
-                    animationDuration: AMBIENT_DURATION[c],
-                  } as CSSProperties}
-                  /* NO will-change HERE, DELIBERATELY, AND IT USED TO BE ON BOTH
-                     THIS AND THE DRIFT LAYER. It is the standard advice for an
-                     animated transform and it is the wrong call at this size: a
-                     track is COLUMN_SETS x 4 clips stacked, which at desktop
-                     widths is between 2,800 and 4,200px tall. will-change pins
-                     an element that big as a composited layer for the lifetime
-                     of the page — eight of them, each re-rasterised at whatever
-                     scale the tilted plane projects it to, and none of it
-                     released when the lanes pause off screen, which is exactly
-                     when the memory should be going back.
-
-                     The browser promotes a running transform animation on its
-                     own and can tile, rasterise only what is near the viewport,
-                     and drop the layer when the animation stops. Saying nothing
-                     gets all of that; will-change opts out of it.
-
-                     Row on a phone, column from `tab` up — and the lane keyframe
-                     flips with it. Both carry the same --sets contract, so the
-                     wrap arithmetic is identical on either axis. */
-                  /* w-max IS LOAD BEARING IN THE ROW LAYOUT, and without it the
-                     phone wall is wrong in two ways at once. A flex container is
-                     block-level, so its width would be the CELL's, not the
-                     clips' — `offsetWidth` would hand `measure` the wall's width
-                     as the modulus, and the keyframe's -100%/--sets would slide
-                     the track by a third of the CELL rather than a third of its
-                     content. max-content makes the track as wide as what is in
-                     it, which is what both of those numbers are supposed to be.
-                     In the column layout the height is content-driven already,
-                     so it goes back to auto. */
-                  /* HOVERING A CLIP STOPS ITS OWN LANE, and only that lane. A
-                     card you are trying to click should not be sliding out from
-                     under the pointer, and the parallax cannot be paused (it is
-                     a function of scroll position, not a clock) so the ambient
-                     lane is the part that can. `:has(button:hover)` rather than
-                     a bare :hover on the track: the track is far taller than the
-                     cell it shows through, and a bare hover would also fire in
-                     the gaps between clips, which reads as the wall stalling at
-                     random. */
-                  className="flex w-max animate-wall6-lane-x [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col"
-                >
-                  {/* Duplication exists so the wraps have somewhere to go. Two
-                      copies for the column carrying one offset, three for the
-                      columns carrying two — see COLUMN_SETS. */}
-                  {Array.from({ length: sets }, () => column)
-                    .flat()
-                    .map((clip, r) => (
-                      <Clip
-                        key={`${r}-${clip.src}`}
-                        clip={clip}
-                        onOpen={() => setActive(clip)}
-                        /* The first copy of each clip is the one in the tab
-                           order; r < column.length is exactly the first set. */
-                        reachable={r < column.length}
-                        /* Unique across every wall on the page — useInViewPlay
-                           budgets play slots per lane, and colliding with
-                           another wall's lane id would share one budget between
-                           two unrelated columns. */
-                        lane={`v6-wall-${c}`}
-                        play={play}
-                      />
-                    ))}
-                </div>
+                {/* Duplication exists so the wrap has somewhere to go: two
+                    copies of the list per lane, which is what one wrapping
+                    offset needs — see COLUMN_SETS. */}
+                {Array.from({ length: sets }, () => column)
+                  .flat()
+                  .map((clip, r) => (
+                    <Clip
+                      key={`${r}-${clip.src}`}
+                      clip={clip}
+                      onOpen={() => setActive(clip)}
+                      /* The first copy of each clip is the one in the tab
+                         order; r < column.length is exactly the first set. */
+                      reachable={r < column.length}
+                      /* Unique across every wall on the page — useInViewPlay
+                         budgets play slots per lane, and colliding with
+                         another wall's lane id would share one budget between
+                         two unrelated columns. */
+                      lane={`v6-wall-${c}`}
+                      play={play}
+                    />
+                  ))}
               </div>
             </div>
           );
@@ -888,20 +784,4 @@ export function ReelWallV6({
       )}
     </div>
   );
-}
-
-/* Bring an unbounded translate into (-set, 0], which is the half-open range
-   where the visible window is always inside real content.
-
-   A BARE `%` IS NOT ENOUGH, and the case it misses is real rather than
-   theoretical. JavaScript's remainder keeps the sign of the dividend, so
-   `-(delta * speed) % set` lands in (-set, 0] only while `delta` is positive.
-   Scroll UP past the point the wall entered the viewport — trivial to do when
-   the wall sits at the top of a page and you arrive at it from below — and
-   delta goes negative, the remainder comes back POSITIVE, and the track is
-   pushed DOWN off its own top edge, exposing a gap above the first clip. This
-   is the standard floored-modulus fix and it agrees with the reference formula
-   exactly wherever the reference is defined. */
-function wrap(y: number, set: number): number {
-  return ((y % set) - set) % set;
 }

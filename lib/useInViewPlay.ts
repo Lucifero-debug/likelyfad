@@ -29,11 +29,15 @@ import { useEffect, useRef } from "react";
    order for free. */
 
 /* Clips allowed to play at once PER LANE. Budgeted per lane rather than per
-   page so one row cannot starve the two under it — all three fill evenly no
+   page so one row cannot starve the two under it — all lanes fill evenly no
    matter which order they scrolled into view.
 
    THIS IS THE KNOB. Raise it if the held-still band at a lane's feeding edge
-   reads as broken; lower it if the walls still stutter on a weak GPU. */
+   reads as broken; lower it if the walls still stutter on a weak GPU.
+
+   IT NO LONGER APPLIES TO THE WORK WALL, which used to be the heaviest thing
+   this budget was holding down: its tiles play unconditionally now and never
+   register here. See the note at the head of Work.tsx. */
 const PER_LANE = 8;
 
 /* A tile counts as on screen at a fifth visible, which is roughly the point it
@@ -119,6 +123,13 @@ const startQueue: HTMLVideoElement[] = [];
 let pump: ReturnType<typeof setInterval> | undefined;
 
 function queueStart(el: HTMLVideoElement) {
+  /* NEVER TWICE IN THE LINE. A tile that leaves the viewport and comes back —
+     which is every tile on a marquee, repeatedly — is released and re-queued,
+     and without this it would hold two places. The second one costs a full turn
+     to discover it has nothing to do, and the tiles behind it wait that long
+     for nothing. The list is tens of entries, so a scan is cheaper than the
+     Set it would take to avoid one. */
+  if (startQueue.includes(el)) return;
   startQueue.push(el);
   if (pump) return;
   pump = setInterval(() => {
@@ -126,19 +137,24 @@ function queueStart(el: HTMLVideoElement) {
        the queue is still intact when the scroll ends. */
     if (registry?.scrolling) return;
 
-    const next = startQueue.shift();
-    if (!next) {
-      clearInterval(pump);
-      pump = undefined;
+    /* A STALE ENTRY DOES NOT COST A TURN. An element may have scrolled away, or
+       lost its slot to something ahead of it, between joining this queue and
+       reaching the front — and the interval is a quarter of a second, which is
+       far too long to spend discovering that. Walk past the dead ones in the
+       same tick and start the first live one. */
+    while (startQueue.length) {
+      const next = startQueue.shift();
+      if (!next) break;
+      const lane = registry?.laneOf.get(next);
+      if (!lane?.playing.has(next)) continue;
+      // Rejects under some autoplay policies. The poster stays up in that case,
+      // which is the correct fallback.
+      void next.play().catch(() => {});
       return;
     }
-    /* It may have scrolled away, or lost its slot to something ahead of it,
-       between joining this queue and reaching the front. */
-    const lane = registry?.laneOf.get(next);
-    if (!lane?.playing.has(next)) return;
-    // Rejects under some autoplay policies. The poster stays up in that case,
-    // which is the correct fallback.
-    void next.play().catch(() => {});
+
+    clearInterval(pump);
+    pump = undefined;
   }, START_STAGGER_MS);
 }
 

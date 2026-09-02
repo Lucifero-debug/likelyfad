@@ -10,7 +10,7 @@ import { ReelWallV6, type ReelColumns } from "./ReelWallV6";
 const { hero } = content;
 
 /* ============================================================================
-   THE SPLIT HERO — the homepage hero's copy, beside the parallax reel wall.
+   THE SPLIT HERO — the homepage hero's copy, beside the drifting reel wall.
 
    THE COPY COLUMN IS components/sections/Hero.tsx, PORTED VERBATIM. Every
    typographic decision below — the kicker's leading rule, the 20ch/22ch
@@ -38,7 +38,7 @@ const { hero } = content;
    THE WALL IS A FIXED-HEIGHT, overflow:hidden BOX. Its height is set here
    rather than derived from the clips inside it, so no amount of travel, no
    aspect ratio and no number of clips can make it grow or push the page around
-   — which is what makes ReelWallV6's uncapped parallax survivable in a layout.
+   — which is what makes ReelWallV6's endless lanes survivable in a layout.
    It is also the crop for the 3D stage, whose overhang is measured against it.
    ========================================================================== */
 
@@ -93,7 +93,7 @@ const SPLIT_GAP = "gap-[48px] lap:gap-[64px]";
 
    From `tab` up the wall is four vertical columns and the height is the crop:
    it is the `containerHeight` in ReelWallV6's seamlessness invariant, and what
-   stops the uncapped parallax pushing the page around.
+   stops the endless lanes pushing the page around.
 
    BELOW `tab` THE WALL IS THREE HORIZONTAL ROWS AND ITS HEIGHT IS THE CONTENT'S.
    Pinning it there would be actively wrong: the rows are stacked, so a 400px box
@@ -112,7 +112,7 @@ export function HeroV6({
       in either component — the wall renders whatever it is handed, so it can be
       pointed at a different library, a curated set, or fixtures in a test. */
   columns: ReelColumns;
-  /** Forwarded to the wall. Turns on the live parallax readout. */
+  /** Forwarded to the wall. Turns on the live lane/invariant readout. */
   debug?: boolean;
 }) {
   const fade = useHeroFade();

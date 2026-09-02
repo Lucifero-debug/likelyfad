@@ -130,10 +130,10 @@ export default function Home() {
             the wall twice, once inside the hero and once beside it. A bare one
             also has to be given a height class of its own: the wall takes its
             footprint from `className` and derives nothing from its clips, which
-            is what stops the uncapped parallax pushing the page around.
+            is what stops the endless lanes pushing the page around.
 
-            Add `debug` for the live readout — scrollDelta, the set/cell
-            seamlessness invariant, and column 4's wrapped y. */}
+            Add `debug` for the live readout — the lane durations and the
+            set/cell seamlessness invariant. */}
         <HeroV6 columns={WALL_COLUMNS} />
 
         {/* ONE VARIANT OF EACH BAND IS MOUNTED. THE REST ARE PARKED, AND THIS
@@ -142,11 +142,13 @@ export default function Home() {
             Mounting all five of each put 140 <video> elements and seven
             marquees on one page — 96 of those clips and three of those marquees
             sat BELOW the fold, decoding and compositing continuously while the
-            only thing anybody was looking at was the hero. The hero's parallax
-            is scroll-linked and runs on the main thread, so it gets whatever
-            frame budget the rest of the page leaves it, and with that much
-            below it there was none: the wall juddered against the page for
-            reasons that had nothing to do with the wall.
+            only thing anybody was looking at was the hero. The wall's lanes
+            translate four tall tracks of video on a tilted plane, so they get
+            whatever frame budget the rest of the page leaves them, and with
+            that much below there was none: the wall juddered for reasons that
+            had nothing to do with the wall. (It was worse still when the wall
+            also carried a scroll-linked parallax on the main thread — that has
+            since been removed, and this is the other half of the same fix.)
 
             TestimonialsV2 also carried its own scroll listener, so parking it
             takes a handler off the gesture path as well.
@@ -156,19 +158,28 @@ export default function Home() {
             what created the problem in the first place. */}
         {/* WHY US, PRICING, FAQ AND THE FOOTER ARE ALL PARKED — every version of
             each, V1 included. Uncomment a band to bring it back. */}
-        <WhyUs /> <WhyUsV2 /> <WhyUsV3 /> <WhyUsV4 /> <WhyUsV5 />
+        <WhyUs /> 
+        {/* <WhyUsV2 /> <WhyUsV3 />  */}
+        {/* <WhyUsV4 />  */}
+        {/* <WhyUsV5 /> */}
 
         <Work />
 
-        <Pricing /> <PricingV2 /> <PricingV3 /> <PricingV4 /> <PricingV5 />
+        {/* <Pricing /> <PricingV2 /> <PricingV3 />  */}
+        <PricingV4 /> 
+        {/* <PricingV5 /> */}
 
         <Testimonials />
-        <TestimonialsV2 /> <TestimonialsV3 /> <TestimonialsV4 /> <TestimonialsV5 />
+        {/* <TestimonialsV2 /> <TestimonialsV3 /> <TestimonialsV4 /> <TestimonialsV5 /> */}
 
-        <Faq /> <FaqV2 /> <FaqV3 /> <FaqV4 /> <FaqV5 />
+        {/* <Faq /> <FaqV2 /> <FaqV3 /> */}
+         <FaqV4 />
+          {/* <FaqV5 /> */}
       </main>
 
-      <Footer /> <FooterV2 /> <FooterV3 /> <FooterV4 /> <FooterV5 />
+      {/* <Footer /> <FooterV2 /> */}
+       <FooterV3 />
+        {/* <FooterV4 /> <FooterV5 /> */}
     </>
   );
 }

@@ -42,24 +42,33 @@ const { why } = content;
    them as readily as to its own section. HEAD_GAP (32→64) over CARD_GAP
    (32→48) puts the ordering back. */
 
-/* The gradient hairline that draws itself across the top of a card on hover.
-   `before` rather than a border, so it can grow from the left instead of
-   appearing all at once. */
-/* PADDING IS ON THE SCALE AND UNDER THE GRID GAP, which is the rule the whole
-   scale exists to hold: 24→32 inside a card that CARD_GAP separates by 32→48,
-   so a pillar's text is always nearer its own edge than its neighbour's. The
-   12/16 it carried before did not break that rule — it was simply too little
-   air for a card running a 32px title at a desktop measure, and it made the
-   six of them read as boxed in rather than as composed. */
+/* THE CARD IS V4'S, CENTRED. Everything that made a V4 pillar read as an
+   enumerated case comes over intact — the 36px gradient disc, the extrabold
+   20px title, the shrinking 16-then-8 ladder under it, the 24 radius and the
+   0.8 hairline — and the only thing changed is the axis: `items-center` plus
+   `text-center` on each part, so the badge sits over the middle of the title
+   rather than beside its first word.
+
+   THE HOVER HAIRLINE IS GONE WITH IT. It grew from the left edge, which is a
+   left-aligned card's gesture; on a centred card it reads as arriving from
+   somewhere. The lift and the shadow are the whole hover now, same as V4.
+
+   PADDING IS STILL UNDER THE GRID GAP, which is the rule the scale exists to
+   hold: 20→24 inside a card that CARD_GAP separates by 32→48, so a pillar's
+   text is always nearer its own edge than its neighbour's. It is a step tighter
+   than the 24→32 this section used before because the type inside shrank with
+   it — a 20px title does not need a 32px surround. */
 const PILLAR =
-  "relative h-full overflow-hidden rounded-2xl border border-line bg-white " +
-  "p-[clamp(24px,2.5vw,32px)] " +
+  "flex h-full flex-col items-center rounded-3xl border-[0.8px] border-line bg-white " +
+  "p-[clamp(20px,2vw,24px)] text-center " +
   "transition-[transform,box-shadow,border-color] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
-  "hover:-translate-y-1.5 hover:border-transparent hover:shadow-[var(--shadow)] " +
-  "before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:content-[''] " +
-  "before:origin-left before:scale-x-0 before:bg-[image:var(--grad)] " +
-  "before:transition-transform before:duration-[280ms] before:ease-[cubic-bezier(0.16,1,0.3,1)] " +
-  "hover:before:scale-x-100";
+  "hover:-translate-y-1.5 hover:border-transparent hover:shadow-[var(--shadow)]";
+
+/* 20px card titles, down to 18 — V4's step, not the section's SIZE_32. The
+   contrast against the 64px heading is carried by WEIGHT here (extrabold
+   against the page's usual bold) rather than by size, which is what lets a
+   title this small still hold its own in the band. */
+const CARD_TITLE = "text-[clamp(1.125rem,1.05rem+0.31vw,1.25rem)]";
 
 /* Two corner washes on warm paper rather than a flat tint: the flame stop
    enters top-left, the violet stop leaves bottom-right, so the band carries the
@@ -129,13 +138,36 @@ export function WhyUs() {
                It resets every three so no card waits more than 140ms. */
             <Reveal key={p.title} delay={(i % 3) * 70} className="h-full">
               <article className={PILLAR}>
-                <span className={`font-sans ${SIZE_16} text-pink-deep`}>
-                  {String(i + 1).padStart(2, "0")}
+                {/* 36px gradient disc, white 14px mono numeral — the only
+                    saturated thing in the card, and the first thing the eye
+                    lands on, which is what makes the six read as a numbered
+                    set rather than six loose boxes.
+
+                    Hidden from a screen reader, loud to the eye. The numeral
+                    carries none of the card's meaning: read aloud, "one, It
+                    looks real, or it doesn't ship" only prefixes every pillar
+                    with a number that says nothing the order has not already
+                    said. */}
+                <span
+                  aria-hidden
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-[image:var(--grad)] font-mono text-sm font-medium leading-6 text-white"
+                >
+                  {i + 1}
                 </span>
-                <h3 className={`mt-3 text-balance font-display ${SIZE_32} font-bold leading-[1.3] tracking-[-0.025em]`}>
+
+                {/* THE LADDER OF SHRINKING GAPS — 16 here, 8 below, not one gap
+                    repeated. The badge sits further from the title than the
+                    title does from its body, so the title and body group as one
+                    block that the badge introduces. */}
+                <h3 className={`pt-4 text-balance font-display ${CARD_TITLE} font-extrabold leading-[1.2] tracking-[-0.025em]`}>
                   {p.title}
                 </h3>
-                <p className={`mt-2 text-pretty font-sans ${SIZE_16} text-ink-soft`}>{p.body}</p>
+                {/* `leading-6` is 24-on-16: these cards run ~390 wide at the
+                    ceiling, so the lines are long enough to need the extra
+                    leading to stay trackable. */}
+                <p className={`pt-2 text-pretty font-sans ${SIZE_16} leading-6 text-ink-soft`}>
+                  {p.body}
+                </p>
               </article>
             </Reveal>
           ))}

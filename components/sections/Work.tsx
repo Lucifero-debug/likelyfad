@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { takeReels } from "@/lib/reelOrder";
 import type { Reel } from "@/lib/reels.generated";
-import { useInViewPlay } from "@/lib/useInViewPlay";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
 import { Reveal } from "@/components/ui/Reveal";
@@ -27,7 +26,36 @@ const { work } = content;
    THIS WALL IS THE EXPENSIVE ONE. It carries three times the clips the hero
    wall does, so every rule the hero wall's comments lay out is load-bearing
    here rather than merely tidy: no mask over a moving layer, no box-shadow in
-   a transition, and `contain` on every row. See the note at each. */
+   a transition, and `contain` on every row. See the note at each.
+
+   EVERY TILE PLAYS, ALL THE TIME, AND NONE OF IT IS GATED ON VISIBILITY. This
+   is a deliberate reversal of what the rest of the page does, and it is worth
+   being plain about what it means, because the machinery it opts out of was
+   built for exactly this section.
+
+   The other walls route their clips through useInViewPlay, which observes each
+   tile, plays only what is on screen, caps how many run per lane, staggers the
+   starts and stops everything for the length of a scroll gesture. This wall
+   uses none of it: all 96 <video> elements autoplay on mount and keep looping
+   whether or not the section is anywhere near the viewport.
+
+   WHAT THAT COSTS, measured on this page before any of that machinery existed:
+   96 simultaneous decoders, each uploading a fresh 288x512 texture to the GPU
+   thirty times a second and compositing as its own layer, plus a load burst of
+   ~96 requests and roughly 22MB the moment the page mounts rather than as tiles
+   are reached. On a weak GPU or a slow line that is felt as a page that
+   scrolls badly everywhere, not only here — the decoders do not stop when you
+   leave the section, because nothing is watching.
+
+   WHAT IS LEFT HOLDING IT DOWN is one thing rather than five:
+   content-visibility: auto still skips layout, paint and compositing for the
+   whole subtree while it is off screen, so the tiles are decoding but not being
+   drawn. The marquees are still paused until the section is near. Neither of
+   those touches playback.
+
+   TO PUT THE GATING BACK, give Tile `useInViewPlay(lane, near)` again as its
+   video ref and restore preload="none" — the hook is unchanged and still in
+   use by every other wall on the page. */
 
 const ROWS = 3;
 /* Each row renders its clips TWICE and slides by exactly half its own length,
@@ -116,19 +144,14 @@ const FADE = "pointer-events-none absolute inset-y-0 z-[2] w-[7%]";
 
 function Tile({
   reel,
-  lane,
   onOpen,
   label,
-  near,
 }: {
   reel: Reel;
-  lane: string;
   onOpen: () => void;
   label: string;
-  /** False until the section is close to the viewport — see useNearViewport. */
-  near: boolean;
 }) {
-  const video = useInViewPlay(lane, near);
+  const video = useAlwaysPlay();
 
   return (
     <button type="button" onClick={onOpen} aria-label={label} className={TILE}>
@@ -155,13 +178,27 @@ function Tile({
             paint order falls back to DOM order. Left static it would paint in
             the in-flow step, which comes before positioned descendants — and
             the poster would sit on top of the playing clip. */}
+        {/* autoPlay AND an explicit play() call, which is belt and braces on
+            purpose. `autoPlay` is what starts a tile the browser considers
+            ordinary; the effect covers the ones it does not, since a muted
+            autoplaying video inside a content-visibility subtree that has never
+            been rendered is exactly the shape user agents apply power-saving
+            heuristics to. Calling play() on an already-playing element is a
+            no-op, so the two cannot fight.
+
+            preload="auto", NOT "none". `none` is what the in-view version
+            wanted — nothing fetched until a tile was chosen to play — and it is
+            contradictory here: every tile is chosen, immediately, so saying
+            "none" only delays the fetch by one round trip and says something
+            untrue about the intent. */}
         <video
           ref={video}
           src={reel.src}
+          autoPlay
           muted
           loop
           playsInline
-          preload="none"
+          preload="auto"
           tabIndex={-1}
           className="relative size-full object-cover"
         />
@@ -170,33 +207,61 @@ function Tile({
   );
 }
 
-/* WHETHER THIS SECTION'S TILES ARE WORTH OBSERVING AT ALL, and it is the
-   difference between a page that scrolls and one that does not.
+/* PLAY EVERY TILE, FOREVER, AND DO NOT ASK WHERE IT IS.
 
-   THE MEASUREMENT. useInViewPlay observes every tile on the page through one
-   shared IntersectionObserver, and an observer recomputes EVERY target it holds
-   on any frame where something moved. The hero's reel wall runs a continuous
-   marquee, so it moved on every frame — which forced this section's 96 tiles to
-   be re-intersected sixty times a second, each one a rect walked up through
-   transformed and clipped ancestors, while the section itself was far below the
-   fold and could not be seen.
+   One ref, one play() on mount, no observer and no registry. It is the whole
+   of this wall's playback policy — see the note at the head of the file for
+   what that costs and what it opts out of.
 
-   Profiled on the production build: with this section present the renderer main
-   thread ran 29% busy, 273ms of a 5s trace inside computeIntersections. Remove
-   it and the same page — reel wall, marquee, 3D stage and all — drops to 1.1%.
-   The wall was never the expensive part; the observer over 140 targets was.
+   THE `canplay` LISTENER IS NOT DEFENSIVE PADDING. play() before the element
+   has decodable data rejects rather than queueing, and with 96 clips opening at
+   once on a slow line a good number of them are in exactly that state at mount.
+   Retrying on the first frame that can be shown is what makes the wall fill in
+   as bytes arrive instead of leaving whichever tiles lost the race on their
+   posters for good. It is removed on cleanup, and play() on an element already
+   playing is a no-op, so a tile that started normally pays nothing for it. */
+function useAlwaysPlay() {
+  const ref = useRef<HTMLVideoElement>(null);
 
-   content-visibility ON THE SECTION DOES NOT COVER THIS. It skips RENDERING for
-   an off-screen subtree, which is why it is still there and still worth having,
-   but an IntersectionObserver goes on tracking targets inside a skipped subtree.
-   The only way to stop the work is to stop observing.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
 
-   So the tiles register when the section is within a viewport of being reached,
-   and not before. The margin is generous on purpose: a tile that starts
-   observing at the moment it becomes visible has to serve useInViewPlay's dwell
-   and its start-stagger before it plays, which would read as the wall arriving
-   dead. One viewport of warning is enough for the queue to have filled by the
-   time anybody sees it. */
+    /* Rejects under some autoplay policies. The poster underneath stays up in
+       that case, which is the correct fallback. */
+    const start = () => void el.play().catch(() => {});
+
+    start();
+    el.addEventListener("canplay", start);
+    return () => el.removeEventListener("canplay", start);
+  }, []);
+
+  return ref;
+}
+
+/* WHETHER THIS SECTION'S MARQUEES SHOULD BE RUNNING AT ALL.
+
+   IT USED TO GATE THE TILES TOO, and that was the more important of its two
+   jobs: useInViewPlay observes every tile on the page through one shared
+   IntersectionObserver, and an observer recomputes EVERY target it holds on any
+   frame where something moved. The hero wall's lanes move constantly, which
+   forced this section's 96 tiles to be re-intersected sixty times a second,
+   each one a rect walked up through transformed and clipped ancestors, while
+   the section was far below the fold and could not be seen. Profiled on the
+   production build: 29% renderer main thread, 273ms of a 5s trace inside
+   computeIntersections, against 1.1% with the section removed.
+
+   THAT PROBLEM IS GONE BY A DIFFERENT ROUTE. The tiles are not observed by
+   anything now — they simply play — so there are 96 fewer targets in the shared
+   observer than there were even with this gate in place.
+
+   WHAT IS LEFT IS THE MARQUEE. Three lanes dragging a 32-clip
+   will-change: transform track composite every frame whether or not anyone can
+   see them, and `near` is what stops that while the section is away.
+
+   content-visibility ON THE SECTION DOES NOT COVER IT, quite: it skips
+   rendering for an off-screen subtree, which is most of the cost, but the
+   animations remain live and the two together are cheaper than either alone. */
 function useNearViewport<T extends Element>() {
   const ref = useRef<T>(null);
   const [near, setNear] = useState(false);
@@ -214,10 +279,11 @@ function useNearViewport<T extends Element>() {
            it to be a fifth of a viewport IN is what makes the flag mean
            "arriving" rather than "adjacent".
 
-           The cost of the margin is that the tiles get less warning to serve
-           useInViewPlay's dwell and stagger, so the first row can arrive on
-           posters and fill in over the next second. That is the designed
-           fallback and it happens while the section is still sliding up. */
+           IT COSTS NOTHING NOW THAT IT ONLY GATES THE MARQUEE. While it also
+           gated playback, a late flag meant the first row could arrive on
+           posters and fill in over the following second; a lane that starts
+           moving a fifth of a viewport in is simply a lane that starts moving
+           when you get there. */
         { rootMargin: "-20% 0px" }
     );
     io.observe(el);
@@ -241,14 +307,17 @@ export function Work() {
          is its three marquees rather than its size.
 
          The rows hold 96 <video> elements between them and each lane drags a
-         32-clip `will-change: transform` track. The clips themselves are already
-         careful — preload="none", and useInViewPlay keeps them on posters until
-         they are actually visible — but the ANIMATIONS were not gated on
-         anything. They composited every frame whether or not the section was on
+         32-clip `will-change: transform` track. The ANIMATIONS were not gated on
+         anything: they composited every frame whether or not the section was on
          screen, which meant that sitting still on the hero, three tracks nobody
-         could see were competing for frames with the hero wall's parallax. That
-         parallax is scroll-linked and runs on the main thread, so it gets
-         whatever budget is left, and this was taking a large share of it.
+         could see were competing for frames with the hero wall's own lanes.
+
+         IT MATTERS MORE SINCE THE CLIPS STOPPED BEING GATED. Those 96 elements
+         are all playing all the time now — see the note at the head of the file
+         — so this rule is no longer one saving among several. It is the only
+         thing standing between an off-screen wall and the full cost of it, and
+         it is why the tiles decode without also being laid out, painted and
+         composited while nobody is looking at them.
 
          content-visibility: auto makes the browser skip layout, paint AND
          compositing for the whole subtree until it comes into view, so the cost
@@ -322,8 +391,6 @@ export function Work() {
                 <Tile
                   key={`${ri}-${i}`}
                   reel={clip}
-                  near={near}
-                  lane={`work-${ri}`}
                   onOpen={() => setActive(clip)}
                   label={`Play reel ${ri * PER_ROW + (i % PER_ROW) + 1} full size`}
                 />

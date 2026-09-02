@@ -116,6 +116,26 @@ export const content = {
   /* REAL quotes, sent by real clients. Identities are kept private by request,
      so attribution is the role and the category, never an invented handle.
      Never add an item here that a client did not actually write. */
+  /* EACH QUOTE NOW CARRIES THE AD IT WAS ABOUT, which is what turned this
+     section from three text cards into three playable ones.
+
+     `reel` IS A reels.generated.ts ID, resolved at render. The ids are stable
+     across a sync — the URLs are not, they take a fresh random suffix every
+     time — so this is the only field that can be written down here. An id that
+     no longer exists degrades to a quote-only card rather than an empty frame,
+     but it is a typo worth fixing: see the lookup in Testimonials.tsx.
+
+     THE PAIRINGS BELOW ARE READ OFF THE ATTRIBUTIONS, NOT OFF A RECORD OF
+     WHICH AD EACH CLIENT WATCHED. The second quote says "podcast-style" and
+     gets the podcast reel; the third says "health brand" and gets the health
+     one; the first is an EU fashion brand and gets the closest thing to fashion
+     in the library. If you know which ad each reaction actually landed on,
+     these three ids are the edit — nothing else has to change.
+
+     `label` sits where the reference block puts a duration badge. Durations are
+     not in reels.generated.ts (the sync records id, src, hq and poster only), so
+     rather than print a number nobody measured it names the format. If real
+     durations ever land in the reel data, this is the field they replace. */
   testimonials: {
     kicker: "What clients say",
     heading: "Real reactions, as sent.",
@@ -123,14 +143,20 @@ export const content = {
       {
         quote: "Looks great. Let's do the next one in German.",
         who: "Founder, EU fashion brand · after the first batch",
+        reel: "boyfriend-angle-ai",
+        label: "Fashion · UGC",
       },
       {
         quote: "You cooked on this edit. The AI looks so real. Very convincing.",
         who: "DTC brand owner · on a podcast-style ad",
+        reel: "ai-podcast",
+        label: "Podcast-style",
       },
       {
         quote: "Insane realism.",
         who: "Creative lead, health brand",
+        reel: "doctor-in-office-ai-ugc-health-product",
+        label: "Health · UGC",
       },
     ],
   },
