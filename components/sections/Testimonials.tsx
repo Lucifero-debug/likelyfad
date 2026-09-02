@@ -40,10 +40,21 @@ const { testimonials } = content;
         own corners inside a white card, and the quote sits under it on paper
         where it needs no scrim to be legible.
 
-     3. HOVER PREVIEWS, SILENTLY. The reference is click-only. A wall of still
-        posters undersells footage whose whole claim is that it moves
-        convincingly, so pointing at a card plays the silent tile cut in place;
-        clicking still opens the full player with audio.
+     3. THERE IS NO PLAY BUTTON. The reference puts a disc in the middle of
+        every card and this has none, because a disc is an instruction to do
+        something the card has already done: the clip is ALREADY RUNNING by the
+        time you could aim at it. What replaces it is a cue that names the one
+        thing left to gain — sound — and it only appears once the picture is
+        moving, so nothing is ever asking to be pressed for a result it is
+        already showing.
+
+     4. IT PLAYS WITHOUT BEING ASKED, BY WHICHEVER MEANS THE DEVICE HAS. On a
+        pointer device that is hover. On a touch device there is no hover, and
+        the usual answer — put the button back for phones — gives the smallest
+        screen the clumsiest version. So on a touch device the card plays when
+        it REACHES THE MIDDLE OF THE VIEWPORT, one at a time, the way a feed
+        behaves: scrolling IS the gesture. Both routes end in the same place,
+        a silent clip with a cue offering sound, and neither needs a control.
 
    WHAT THE CARD CLAIMS, WHICH IS THE ONE THING NOT TO GET WRONG HERE. A play
    button over a face with a quote beneath it reads as "this video is the client
@@ -58,9 +69,12 @@ const { testimonials } = content;
    the same reason there are no names.
 
    MEDIA ELEMENTS ARE CREATED, NEVER PARKED. A card at rest is a poster and
-   nothing else: the preview clip mounts on pointer enter and dies on leave, and
-   the full player mounts on click and dies when another card takes over. So the
-   section holds at most ONE <video> at any moment. That is not fussiness — the
+   nothing else: the preview clip mounts when the card is pointed at or scrolled
+   into the middle band, and dies the moment it is not; the full player mounts on
+   click and dies when another card takes over. The in-view route deliberately
+   picks ONE card rather than every card in frame, which is what keeps this true
+   on a phone where all three can be near the viewport at once. So the section
+   holds at most ONE <video> at any moment. That is not fussiness — the
    page already mounts 128 of them between the hero wall and the work wall,
    which is past the number of media players a browser keeps alive at once, and
    three permanent ones here would come out of that budget to show a frame the
@@ -94,15 +108,25 @@ const CARD =
 const MEDIA =
   "relative isolate aspect-[9/16] w-full overflow-hidden rounded-2xl bg-poster";
 
-/* The play disc. White with a pink glyph — the page's accent doing the work the
-   reference gives to glass. It carries its own shadow because it sits on an
-   unknown frame of video and cannot rely on a scrim: dropping the full-frame
-   gradient is most of what "less glassy" means here, and this is what pays for
-   it. */
-const PLAY_DISC =
-  "grid size-14 place-items-center rounded-full bg-white text-pink-deep shadow-[0_8px_28px_rgba(0,0,0,0.35)] " +
-  "transition-transform duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] " +
-  "group-hover:scale-110 group-active:scale-95";
+/* THE SOUND CUE — what stands where the play disc used to.
+
+   IT ONLY EXISTS WHILE THE CLIP IS RUNNING, which is the whole idea. A control
+   on a still poster has to advertise playback; this one arrives after playback,
+   so it can advertise the only thing still missing, and it says so in words
+   rather than in a glyph nobody has to decode. Its wording changes with the
+   route in: "Click" where a pointer started it, "Tap" where scrolling did.
+
+   IT IS NOT A BUTTON, and that is deliberate rather than sloppy: the whole
+   frame is the button, so a second target inside it would only create a place
+   where the click means the same thing but the cursor implies otherwise.
+   pointer-events-none keeps it out of the way entirely.
+
+   Paper rather than glass, like the badge above it, so it holds ink type over
+   any frame without needing backdrop-filter to be supported. */
+const SOUND_CUE =
+  "pointer-events-none absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/92 py-1 pl-2 pr-2.5 " +
+  `font-mono ${TEXT_META} uppercase leading-none tracking-[0.08em] text-ink backdrop-blur-[2px] ` +
+  "transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)]";
 
 /* The format badge, and the light counterpart to the reference's glass pill:
    near-solid paper rather than a tinted blur, so it holds ink type over any
@@ -160,18 +184,42 @@ function reelById(id: string): Reel | undefined {
   return reelVideos.find((r) => r.id === id);
 }
 
+/* AUTOPLAYING VIDEO IS MOTION, so both routes into a preview are gated on the
+   same preference. Read at the moment it matters rather than once on mount: it
+   costs nothing — this runs on a hover or a scroll boundary, not on a frame —
+   and a visitor who turns the setting on mid-session is respected immediately
+   rather than on their next navigation. */
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 /* Whether a pointer entering a card should start the silent preview.
 
-   READ AT THE MOMENT OF THE EVENT, NOT ONCE ON MOUNT. It costs nothing — this
-   runs on a hover, not on a frame — and it means a visitor who turns reduced
-   motion on mid-session is respected immediately rather than on their next
-   navigation. The pointerType check is what keeps a touch from triggering it:
-   on a phone the first tap would fire enter, start a silent preview and then
-   have the tap open the player anyway, which is two loads for one gesture. */
-function wantsPreview(pointerType: string): boolean {
-  if (pointerType !== "mouse") return false;
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+   THE pointerType CHECK IS WHAT KEEPS A TOUCH OUT OF THIS ROUTE. A tap fires
+   pointerenter before it fires click, so without it a phone would start the
+   silent preview and then open the full player anyway — two loads for one
+   gesture, on the connection least able to afford it. Touch has its own route;
+   see IN_VIEW_BAND. */
+function wantsHoverPreview(pointerType: string): boolean {
+  return pointerType === "mouse" && !reducedMotion();
 }
+
+/* THE MIDDLE BAND, and the whole of the touch behaviour.
+
+   A card counts as "being looked at" when it crosses the middle 40% of the
+   viewport — 30% shaved off the top and bottom of the root box. That is the
+   number to change if it feels early or late, and the two ends do different
+   things: widen it and two cards qualify at once on a phone (only the first
+   still plays, but the switch happens sooner than the eye expects), narrow it
+   and a card has to be almost perfectly centred, which on a slow scroll means
+   the section spends most of its time showing stills.
+
+   ONLY ON A DEVICE WITH NO HOVER. On a laptop with a touchscreen both routes
+   would be live, and a card would start playing as it scrolled past whether or
+   not the pointer was anywhere near it. `(hover: none)` is the query that
+   separates them: it describes the PRIMARY input, so a phone matches and a
+   touch-capable laptop does not. */
+const IN_VIEW_BAND = "-30% 0px -30% 0px";
 
 /* ---------------------------------------------------------------------------
    THE PLAYER. Mounted only while its card is the open one, so every piece of
@@ -414,34 +462,45 @@ function Card({
   reel,
   open,
   onOpen,
+  inView,
+  frameRef,
 }: {
   item: (typeof testimonials.items)[number];
   reel: Reel | undefined;
   open: boolean;
   onOpen: () => void;
+  /** True when this is the card the section has chosen as centred — touch
+      devices only, and never more than one card at a time. */
+  inView: boolean;
+  /** Registers this card's frame with the section's observer. */
+  frameRef: (node: HTMLDivElement | null) => void;
 }) {
-  /* The silent hover clip. Mounted only while the pointer is over the frame, so
-     a card that is merely passed over costs one fetch that the browser is free
-     to abandon the moment the element goes.
+  /* THE TWO ROUTES MEET HERE. `hovering` is this card's own business; `inView`
+     is the section's, because choosing one card out of three is a decision no
+     single card can make. Either one plays the clip and neither knows about the
+     other, which is what keeps the two behaviours from having to agree on
+     anything beyond "is it running".
 
-     `ready` IS SEPARATE FROM `preview` BECAUSE THE FADE HAS TO BE STATE. The
-     obvious shortcut is to drop the opacity class off the element in the
-     `playing` handler and leave React out of it — and it works until anything
-     re-renders this card, at which point reconciliation writes the original
-     className back and a playing preview turns invisible. Opening ANOTHER card
-     re-renders every card, so that is not a hypothetical. */
-  const [preview, setPreview] = useState(false);
+     `ready` IS SEPARATE BECAUSE THE FADE HAS TO BE STATE. The obvious shortcut
+     is to drop the opacity class off the element in the `playing` handler and
+     leave React out of it — and it works until anything re-renders this card,
+     at which point reconciliation writes the original className back and a
+     playing preview turns invisible. Opening ANOTHER card re-renders every
+     card, so that is not a hypothetical. */
+  const [hovering, setHovering] = useState(false);
   const [ready, setReady] = useState(false);
+  /* The preview's own progress hairline, written through a ref rather than
+     state: timeupdate fires ~4 times a second per playing clip, and putting
+     that through React would re-render the card — and therefore its quote, its
+     attribution and the whole figure — for a 2px bar. React never sets
+     `transform` on this element, so nothing reconciles it away. */
+  const bar = useRef<HTMLSpanElement>(null);
 
-  const enter = (pointerType: string) => {
-    if (!wantsPreview(pointerType)) return;
-    setReady(false);
-    setPreview(true);
-  };
+  const preview = !open && (hovering || inView);
 
   return (
     <figure className={CARD}>
-      <div className={MEDIA}>
+      <div ref={frameRef} className={MEDIA}>
         {reel && open ? (
           <Player reel={reel} label={item.label} />
         ) : (
@@ -449,8 +508,12 @@ function Card({
             <button
               type="button"
               onClick={onOpen}
-              onPointerEnter={(e) => enter(e.pointerType)}
-              onPointerLeave={() => setPreview(false)}
+              onPointerEnter={(e) => {
+                if (!wantsHoverPreview(e.pointerType)) return;
+                setReady(false);
+                setHovering(true);
+              }}
+              onPointerLeave={() => setHovering(false)}
               /* The label says what OPENING it does. The quote and the
                  attribution are in the figure below, so a screen reader has them
                  either way; what it cannot get from a poster is that this
@@ -493,29 +556,72 @@ function Card({
                   tabIndex={-1}
                   aria-hidden="true"
                   onPlaying={() => setReady(true)}
+                  /* The hairline is driven from here rather than from a
+                     requestAnimationFrame loop: timeupdate is the event the
+                     browser already fires for this, roughly four times a
+                     second, which is smooth enough for a bar 2px tall and
+                     costs nothing when the tab is in the background. */
+                  onTimeUpdate={(e) => {
+                    const el = bar.current;
+                    const { currentTime, duration } = e.currentTarget;
+                    if (!el || !Number.isFinite(duration) || duration <= 0) return;
+                    el.style.transform = `scaleX(${currentTime / duration})`;
+                  }}
                   className={`absolute inset-0 size-full object-cover transition-opacity duration-[320ms] ${
                     ready ? "opacity-100" : "opacity-0"
                   }`}
                 />
               )}
 
-              <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <span className={PLAY_DISC}>
-                  {/* The same triangle MotionToggle draws — one glyph, inline,
-                      rather than an icon set imported for a single shape. The
-                      1px nudge is optical: a triangle centred on its bounding
-                      box reads as sitting left of centre in a circle. */}
-                  <svg
-                    viewBox="0 0 10 12"
-                    width="14"
-                    height="17"
-                    fill="currentColor"
-                    className="translate-x-px"
-                    aria-hidden="true"
-                  >
-                    <path d="M0 0l10 6-10 6z" />
-                  </svg>
-                </span>
+              {/* THE PROGRESS HAIRLINE — the second half of what replaces the
+                  play button. Removing the disc removes the only thing on a
+                  resting card that said "this is video"; once the picture moves
+                  that is self-evident, but a clip on loop with no marks on it
+                  still gives no sense of LENGTH, and a viewer who cannot see
+                  how much is left reads a loop as a stutter. Two pixels of the
+                  page's own ramp fixes that and asks for nothing.
+
+                  scaleX from the left, so the only thing changing per frame is
+                  a transform on a composited layer — a width would lay out the
+                  frame four times a second. */}
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[image:var(--grad)] transition-opacity duration-[280ms] ${
+                  ready ? "opacity-100" : "opacity-0"
+                }`}
+                ref={bar}
+                /* Starts at zero width, not full: the first timeupdate is a
+                   fraction of a second away, and a bar that begins full and
+                   snaps back reads as the clip having restarted. */
+                style={{ transform: "scaleX(0)" }}
+              />
+
+              {/* THE SOUND CUE, IN PLACE OF THE PLAY BUTTON — see SOUND_CUE. It
+                  waits for `ready` rather than for `preview`, so it appears with
+                  the moving picture and not over a still poster that is about to
+                  be replaced. */}
+              <span
+                className={`${SOUND_CUE} ${
+                  ready ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+                }`}
+                aria-hidden="true"
+              >
+                <svg
+                  viewBox="0 0 14 12"
+                  width="12"
+                  height="11"
+                  fill="currentColor"
+                  className="text-pink-deep"
+                >
+                  <path d="M0 4h3l3-3v10L3 8H0z" />
+                  <path
+                    d="M9 3.5a4 4 0 0 1 0 5M11 2a6.5 6.5 0 0 1 0 8"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    fill="none"
+                  />
+                </svg>
+                {hovering ? "Click for sound" : "Tap for sound"}
               </span>
 
               <span className={BADGE}>{item.label}</span>
@@ -564,6 +670,46 @@ export function Testimonials() {
      one may play at a time — see the note at the top. */
   const [open, setOpen] = useState<number | null>(null);
 
+  /* The card a touch device is currently looking at, or null. Also held here,
+     and for a stronger reason than `open`: "which of the three is centred" is
+     not a question any one card can answer about itself. */
+  const [centred, setCentred] = useState<number | null>(null);
+  const frames = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    /* BOTH GUARDS RUN BEFORE ANYTHING IS OBSERVED, so on a laptop this effect
+       costs one media-query read and then nothing at all for the life of the
+       page — no observer, no callbacks, no state. */
+    if (!window.matchMedia("(hover: none)").matches) return;
+    if (reducedMotion()) return;
+
+    const els = frames.current.filter((el): el is HTMLDivElement => el !== null);
+    if (!els.length) return;
+
+    /* Insertion order is card order, so the LOWEST index in here is the highest
+       card on the page — which is the one to play when a slow scroll leaves two
+       of them touching the band at once. Picking the most-intersecting instead
+       would swap between them mid-scroll, and every swap is a media element
+       torn down and rebuilt. */
+    const inBand = new Set<number>();
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const i = els.indexOf(entry.target as HTMLDivElement);
+          if (i < 0) continue;
+          if (entry.isIntersecting) inBand.add(i);
+          else inBand.delete(i);
+        }
+        setCentred(inBand.size ? Math.min(...inBand) : null);
+      },
+      { rootMargin: IN_VIEW_BAND }
+    );
+
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     /* SECTION OUTSIDE, WRAP INSIDE, like every other band. Without the ceiling
        these cards ran to the viewport, so on a wide monitor a one-line quote was
@@ -601,7 +747,16 @@ export function Testimonials() {
                its neighbours short — the frames stay on one baseline and the
                text blocks take the difference. */
             <Reveal key={t.quote} delay={i * 70} className="h-full">
-              <Card item={t} reel={reelById(t.reel)} open={open === i} onOpen={() => setOpen(i)} />
+              <Card
+                item={t}
+                reel={reelById(t.reel)}
+                open={open === i}
+                onOpen={() => setOpen(i)}
+                inView={centred === i}
+                frameRef={(node) => {
+                  frames.current[i] = node;
+                }}
+              />
             </Reveal>
           ))}
         </div>
