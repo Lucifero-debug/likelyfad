@@ -718,27 +718,18 @@ export function ReelWallV6({
         })}
       </div>
 
-      {/* Soft edges, so clips fade out rather than being sliced by the crop.
-          --fade-stops is the page's own smoothstep ramp, keyed to --color-paper
-          — a straight alpha ramp lands as a visible band, and these stops hug
-          full paper, drop through the middle and tail off flat into nothing. */}
-      {/* THE FADES ARE `tab`-AND-UP ONLY. From `tab` the lanes run vertically,
-          so a top and a bottom ramp soften the edges the columns actually
-          enter and leave by. On a phone the lanes run horizontally and the
-          matching pair would be side ramps — but at a 13% width against a
-          phone's measure they read as a shadow down both edges of the section
-          rather than as the rows continuing past the frame, which is the same
-          objection that removed the desktop side pair below. So the phone gets
-          a clean crop and no gradient at all: `hidden tab:block`, not a
-          responsive rewrite of the same two elements. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-[2] hidden h-[64px] bg-[linear-gradient(to_bottom,var(--fade-stops))] tab:block"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] hidden h-[64px] bg-[linear-gradient(to_top,var(--fade-stops))] tab:block"
-      />
+      {/* NO TOP OR BOTTOM FADES EITHER. There were two here — a 64px paper
+          ramp at each end from `tab` up, on the reasoning that a lane sliced
+          by the crop reads as a bug where a faded one reads as the columns
+          continuing past the frame. They read as a shadow across the top and
+          bottom of the section instead, which is the same objection that
+          removed the side pair below, so the wall now has no gradients at all
+          and every edge is a clean cut.
+
+          WHAT THAT COSTS: the lanes visibly enter and leave at the crop. If
+          that ever needs softening again the fix is the stage geometry above —
+          the inset/overhang pair — not a gradient back here. --fade-stops is
+          still defined page-wide for the bands that do use it. */}
 
       {/* NO SIDE FADES ON DESKTOP, DELIBERATELY. There were two here — a 3%
           ramp on the left and 6% on the right — softening the edges the tilted
@@ -752,9 +743,8 @@ export function ReelWallV6({
           has to be wider than its frame to still reach the far edge once it
           recedes), so the far column IS sliced — it is just sliced sharply now.
           The fix is the inset/overhang pair on the stage above, not a gradient
-          back here. The top/bottom pair above is untouched: it softens the edge
-          the lanes actually enter and leave by, and it is the one pair that
-          never reads as a shadow. */}
+          back here. The top/bottom pair went the same way for the same reason —
+          see the note above it. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on
