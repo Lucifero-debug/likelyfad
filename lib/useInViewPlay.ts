@@ -35,10 +35,35 @@ import { useEffect, useRef } from "react";
    THIS IS THE KNOB. Raise it if the held-still band at a lane's feeding edge
    reads as broken; lower it if the walls still stutter on a weak GPU.
 
-   IT NO LONGER APPLIES TO THE WORK WALL, which used to be the heaviest thing
-   this budget was holding down: its tiles play unconditionally now and never
-   register here. See the note at the head of Work.tsx. */
-const PER_LANE = 8;
+   IT APPLIES TO THE WORK WALL AGAIN, and that wall is what set this value.
+   Work's rows register as `work-row-0/1/2` — see the note above its Tile. For
+   a while they did not: the wall had opted out of this budget entirely and
+   played all 96 tiles unconditionally, which measured at 18MB of video fetched
+   before the visitor had scrolled. That is the history this number exists for,
+   not a description of what it does now.
+
+   8 WAS ONE SHORT OF THE ROW, AND SO WAS 10. At 1920 a Work tile is 158px wide
+   on a ~170px pitch, and the count that matters is not how many tiles overlap
+   the viewport but how many clear THRESHOLD — measured with a real observer at
+   0.2 against the same elements the registry watches, that is ELEVEN to TWELVE
+   per row. Against 8, three lost. Against 10, one still did, and it was not a
+   sliver at the edge: it was a tile at full intersectionRatio sitting ~200px
+   in from the lane's feeding edge, held for as long as you looked at the
+   section. A still frame among moving ones reads as broken rather than as
+   pending, which is the whole reason this number is tuned at all.
+
+   11 IS THE CEILING NOW, RAISED BY EXACTLY ONE AND NO FURTHER. What that buys
+   is the eligible band on the widths this page is actually used at; what it
+   still refuses is the twelfth and thirteenth tile, which is where the cost
+   curve was profiled. The figure behind that ceiling is unchanged and is the
+   reason there is one: 12+ concurrent tiles across three rows was the most
+   expensive arrangement on this page — 36 live decoders, each uploading a
+   fresh 288x512 texture thirty times a second, every one its own compositing
+   layer. 11 puts the worst case at 33 rather than 36, and it is deliberately
+   the last step available here. If the feeding-edge band still reads as broken
+   after this, THE FIX IS THE FADE OVER IT, NOT THIS NUMBER — see FADE in
+   Work.tsx, which is sized to cover the tile this budget cannot reach. */
+const PER_LANE = 11;
 
 /* A tile counts as on screen at a fifth visible, which is roughly the point it
    clears the fade. */
@@ -91,8 +116,32 @@ const SCROLL_IDLE_MS = 160;
    Started one at a time, each clip has the whole line to itself for the ~1s it
    takes to pull 230KB, and a clip that has finished downloading loops out of
    cache forever after — costing nothing. Twelve staggered starts drain in about
-   three seconds and every one of them plays clean. */
-const START_STAGGER_MS = 260;
+   three seconds and every one of them plays clean.
+
+   260 WAS TUNED AGAINST A QUEUE THAT NO LONGER EXISTS AT THAT SIZE. The figure
+   above is the work wall's twenty-four slots seen as ONE burst, because at the
+   time the alternative was all twenty-four opening in the same instant. What
+   actually made that safe was the stagger existing at all, not its width: a
+   clip needs the line to itself for about a second, and 260ms hands the next
+   one a line the previous is still using regardless. The pacing is doing its
+   job in either case; past that, the interval is only deciding HOW LONG THE
+   WALL LOOKS UNFINISHED.
+
+   AND THAT COST GREW WHEN THE WORK WALL CAME BACK ONTO THIS QUEUE. There is
+   ONE line, shared — the thing being rationed is the connection, and there is
+   only one of those — so Work's thirty slots now drain behind whatever the hero
+   wall still has outstanding. At 260 a full section took past six seconds to
+   finish filling, which is long enough that the last tiles arrive after the
+   visitor has read the heading and moved on, and it reads as tiles that are
+   broken rather than tiles that are coming.
+
+   120 HALVES THAT WITHOUT TOUCHING WHAT THE STAGGER IS FOR. Starts are still
+   serialised, still one at a time, still paused for the length of a scroll
+   gesture — the burst this exists to prevent is just as impossible at 120 as at
+   260. What changes is only how quickly the queue drains behind it. Lower this
+   further and the starts begin to overlap inside one clip's fetch, which is the
+   contention the measurement above describes; that is the floor, not 0. */
+const START_STAGGER_MS = 120;
 
 type Lane = {
   /* Both are insertion-ordered — a Set iterates in the order things went into

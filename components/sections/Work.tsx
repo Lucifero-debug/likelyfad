@@ -29,34 +29,32 @@ const { work } = content;
    here rather than merely tidy: no mask over a moving layer, no box-shadow in
    a transition, and `contain` on every row. See the note at each.
 
-   EVERY TILE PLAYS, ALL THE TIME, AND NONE OF IT IS GATED ON VISIBILITY. This
-   is a deliberate reversal of what the rest of the page does, and it is worth
-   being plain about what it means, because the machinery it opts out of was
-   built for exactly this section.
+   EVERY TILE IS GATED ON VISIBILITY, through the same machinery as the rest of
+   the page. Each one is a LazyVideo on a lane of its own row — `work-row-0/1/2`
+   — so lib/useInViewPlay observes it, withholds its source until it is within
+   200px of the viewport, plays at most PER_LANE per row, staggers the starts
+   and stops everything for the length of a scroll gesture. The full argument
+   for each of those numbers is in that file; the note above Tile says how this
+   wall in particular sits on them.
 
-   The other walls route their clips through useInViewPlay, which observes each
-   tile, plays only what is on screen, caps how many run per lane, staggers the
-   starts and stops everything for the length of a scroll gesture. This wall
-   uses none of it: all 96 <video> elements autoplay on mount and keep looping
-   whether or not the section is anywhere near the viewport.
+   IT WAS NOT ALWAYS SO, AND THE HISTORY IS THE REASON THE COMMENTS HERE ARE AS
+   LOUD AS THEY ARE. This wall used to opt out of all of it: 96 <video>
+   elements with `autoPlay` and preload="auto", one play() on mount, nothing
+   watching. Measured on a 1920x1080 load with nothing scrolled, that was 96
+   simultaneous decoders — each uploading a fresh 288x512 texture to the GPU
+   thirty times a second and compositing as its own layer — and 60 distinct
+   clips, 18MB of video, fetched before the visitor had moved. The decoders did
+   not stop when you left the section, because nothing was watching, so it was
+   felt as a page that scrolled badly everywhere rather than only here.
 
-   WHAT THAT COSTS, measured on this page before any of that machinery existed:
-   96 simultaneous decoders, each uploading a fresh 288x512 texture to the GPU
-   thirty times a second and compositing as its own layer, plus a load burst of
-   ~96 requests and roughly 22MB the moment the page mounts rather than as tiles
-   are reached. On a weak GPU or a slow line that is felt as a page that
-   scrolls badly everywhere, not only here — the decoders do not stop when you
-   leave the section, because nothing is watching.
-
-   WHAT IS LEFT HOLDING IT DOWN is one thing rather than five:
-   content-visibility: auto still skips layout, paint and compositing for the
-   whole subtree while it is off screen, so the tiles are decoding but not being
-   drawn. The marquees are still paused until the section is near. Neither of
-   those touches playback.
-
-   TO PUT THE GATING BACK, give Tile `useInViewPlay(lane, near)` again as its
-   video ref and restore preload="none" — the hook is unchanged and still in
-   use by every other wall on the page. */
+   content-visibility: auto ON THE SECTION NEVER COVERED THAT, and it is worth
+   knowing why, because it looks like it should. It skips layout, paint and
+   compositing for the whole subtree while it is off screen — so the tiles were
+   decoding without being drawn — but it does nothing whatever about network or
+   decode. It is still here and still worth having; it was simply never the
+   thing standing between this wall and its cost. The marquees being paused
+   until the section is near is the same kind of saving, and the same
+   limitation: neither touches playback. */
 
 const ROWS = 3;
 /* Each row renders its clips TWICE and slides by exactly half its own length,
@@ -140,8 +138,22 @@ const TILE =
    The stop colour IS the section's outer colour (#17141b), which is what the
    radial has settled to by the time it reaches these edges, and the far end
    names the same channels at alpha 0: fading to bare `transparent` would ramp
-   through rgba(0, 0, 0, 0) and darken the middle of the fade. */
-const FADE = "pointer-events-none absolute inset-y-0 z-[2] w-[7%]";
+   through rgba(0, 0, 0, 0) and darken the middle of the fade.
+
+   THE WIDTH IS SIZED TO A TILE, AND THAT IS WHY IT IS 12% AND NOT 7%. This is
+   the second half of the playback budget in lib/useInViewPlay: PER_LANE tops
+   out at 11 while 11-12 tiles per row clear THRESHOLD, so on the wide end of
+   that range ONE tile per row is always held on its poster. The FIFO queue
+   parks it at the edge the lane feeds in from — the right for rows 0 and 2,
+   the LEFT for row 1, which runs reversed — so a fade wide enough to cover a
+   tile there is what turns a frozen frame into an edge that is simply dark.
+
+   7% was 133px against a ~170px tile pitch: never wide enough to cover one,
+   so the held tile sat measurably outside it, ~200px in, at full
+   intersectionRatio. 12% is 228px at a 1902px section, which reaches it. The
+   number is a TILE PITCH, not a taste value — if the tile clamp or the row gap
+   changes, this is derived from them and moves too. */
+const FADE = "pointer-events-none absolute inset-y-0 z-[2] w-[12%]";
 
 function Tile({
   reel,
@@ -232,9 +244,25 @@ function Tile({
    production build: 29% renderer main thread, 273ms of a 5s trace inside
    computeIntersections, against 1.1% with the section removed.
 
-   THAT PROBLEM IS GONE BY A DIFFERENT ROUTE. The tiles are not observed by
-   anything now — they simply play — so there are 96 fewer targets in the shared
-   observer than there were even with this gate in place.
+   THE TILES ARE OBSERVED AGAIN. That problem has not been designed away, it
+   has been RE-ACCEPTED: all 96 are LazyVideo tiles registered with the shared
+   observer, which is the same population the trace above measured.
+
+   WHAT IS DIFFERENT is that only one of the two observers holds them for good.
+   LazyVideo's attach observer unobserves each tile permanently the first time
+   it comes near — it has nothing left to ask once the source is on — so that
+   half drains to nothing. The playback registry's half does not drain, and
+   cannot: it has to keep watching to know when a tile leaves.
+
+   `near` DOES NOT GATE THEM, AND COULD. useInViewPlay and LazyVideo both take
+   an `enabled` flag for exactly this, and this wall passes neither, so its
+   tiles register on mount and stay registered whether or not the section is
+   anywhere near. If computeIntersections shows up in a trace again, threading
+   `near` down to Tile as `enabled` is the one-line way back to what the
+   paragraph above describes. It is off for now because the source attach gate
+   sits in front of playback, so an unregistered tile cannot be the thing that
+   fetches early — the flag would buy observer time and nothing else, and that
+   is a trade worth making from a trace rather than from a guess.
 
    WHAT IS LEFT IS THE MARQUEE. Three lanes dragging a 32-clip
    will-change: transform track composite every frame whether or not anyone can
