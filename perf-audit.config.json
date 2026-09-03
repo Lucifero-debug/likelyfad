@@ -1,0 +1,47 @@
+{
+  "viewport": { "width": 1440, "height": 900 },
+
+  "_comment": "Selectors read out of the mounted components on `/` (app/page.tsx mounts HeroV6 -> ReelWallV6, WhyUs, Work, PricingV4, Testimonials, FaqV4, FooterV3). 1440x900 is above the 761px `tab` breakpoint, so this pass tests the four-column tilted wall. The 390-wide pass uses perf-audit.390.json. `Play ...` labels are NOT unique across the page: ReelWallV6 emits `Play {alt} full size`, Work emits `Play reel N full size`, Testimonials emits `Play the ad this reaction was about - ...`, so every reel selector below is scoped to its section.",
+
+  "hover": [
+    {
+      "name": "reel wall clip (tilted)",
+      "selector": "[role='group'][aria-label^='A wall of recent'] button[aria-label^='Play'] >> nth=2"
+    },
+    { "name": "nav link", "selector": "header nav[aria-label='Primary'] a >> nth=0" },
+    { "name": "nav CTA", "selector": "header a:has-text('DM us your product')" },
+    { "name": "hero primary CTA", "selector": "#top a:has-text('DM us your product')" },
+    { "name": "why us pillar", "selector": "#why article" },
+    { "name": "work grid tile", "selector": "#work button[aria-label^='Play reel'] >> nth=3" },
+    {
+      "name": "testimonial card",
+      "selector": "button[aria-label^='Play the ad this reaction']"
+    },
+    { "name": "faq question", "selector": "#faq button[aria-expanded]" },
+    { "name": "pricing CTA", "selector": "#pricing a:has-text('Get your quote')" },
+    { "name": "footer link", "selector": "footer nav a >> nth=0" }
+  ],
+
+  "toggle": [
+    {
+      "name": "reel lightbox",
+      "open": "[role='group'][aria-label^='A wall of recent'] button[aria-label^='Play'] >> nth=2",
+      "close": "[aria-label='Close preview']"
+    },
+    {
+      "name": "work lightbox",
+      "open": "#work button[aria-label^='Play reel'] >> nth=3",
+      "close": "[aria-label='Close preview']"
+    },
+    {
+      "name": "faq accordion",
+      "open": "#faq button[aria-expanded]",
+      "close": "#faq button[aria-expanded]"
+    },
+    {
+      "name": "testimonial player",
+      "open": "button[aria-label^='Play the ad this reaction']",
+      "close": null
+    }
+  ]
+}

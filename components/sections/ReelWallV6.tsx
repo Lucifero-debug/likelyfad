@@ -681,7 +681,15 @@ export function ReelWallV6({
                    the track is far taller than the cell it shows through, and a
                    bare hover would also fire in the gaps between clips, which
                    reads as the wall stalling at random. */
-                className="flex w-max animate-wall6-lane-x [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col"
+                /* AND `active` STOPS EVERY LANE, for the lightbox rather than
+                   for the wall: its scrim is a full-viewport backdrop-filter,
+                   and a filter re-samples whatever moves behind it on every
+                   frame it is composited. Four lanes sliding under an overlay
+                   nobody can see through were being paid for and seen by
+                   no one. The same stop is in Work, which has three. */
+                className={`flex w-max animate-wall6-lane-x [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col ${
+                  active ? "[animation-play-state:paused]" : ""
+                }`}
               >
                 {/* Duplication exists so the wrap has somewhere to go: two
                     copies of the list per lane, which is what one wrapping

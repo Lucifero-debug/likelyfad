@@ -9,7 +9,10 @@ import type { Reel } from "@/lib/reels.generated";
    The entrance is a state flip rather than a keyframe: mount at rest, then one
    frame later switch the classes on, and the transition does the rest. That
    keeps two more @keyframes out of globals.css for an animation that plays for
-   under a second. */
+   under a second.
+
+   THE SCRIM IS A FLAT TINT AND NOT A FROSTED ONE, which is a measurement
+   rather than a taste — the note on the backdrop element has the numbers. */
 export function Lightbox({ reel, onClose }: { reel: Reel; onClose: () => void }) {
   const [shown, setShown] = useState(false);
   const closeBtn = useRef<HTMLButtonElement>(null);
@@ -35,8 +38,33 @@ export function Lightbox({ reel, onClose }: { reel: Reel; onClose: () => void })
       aria-modal="true"
       aria-label="Reel preview"
       onClick={onClose}
-      /* z-210: above the nav (120) and the skip link (200). */
-      className={`fixed inset-0 z-[210] grid place-items-center p-[clamp(16px,4vw,48px)] bg-[color-mix(in_srgb,var(--color-noir)_52%,transparent)] backdrop-blur-[24px] backdrop-saturate-[115%] transition-opacity duration-300 ${
+      /* z-210: above the nav (120) and the skip link (200).
+
+         NO backdrop-filter, AND IT IS WHAT USED TO BE HERE. `backdrop-blur-[24px]
+         backdrop-saturate-[115%]` over a 52% tint was the single most expensive
+         interaction on the site: profiled on the production build at 1440x900,
+         opening this from the work wall cost 4 visible hitches, a 160ms worst
+         frame and jitter 30, with zero blocking main-thread time — entirely
+         compositor-side, entirely at the mount, because a full-viewport filter
+         has to raster the whole backdrop before the first frame of the overlay
+         can be composited.
+
+         IT IS THE FILTER AND NOT THE RADIUS. 24, 16, 12 and 8px were measured
+         against each other and against none: every radius held 3-4 hitches and
+         a ~130-160ms worst frame, and only removing the filter moved anything.
+         There is no cheap frosted setting to tune down to — it is present or
+         absent. Absent, with the fade below, the same open measures ZERO
+         hitches, a 49ms worst frame and jitter 6.7.
+
+         THE TINT CARRIES THE SEPARATION INSTEAD, at 88% rather than 52%. The
+         blur is what let the old value stay that transparent; a flat scrim over
+         96 clips needs the density or the wall reads straight through it.
+
+         The fade is affordable now, and was never itself the problem: an
+         opacity transition over a plain colour is one composited layer at a new
+         alpha, which is free. Over a filter it was 300ms of re-blurring the
+         viewport, and that is why the two are in the same note. */
+      className={`fixed inset-0 z-[210] grid place-items-center p-[clamp(16px,4vw,48px)] bg-[color-mix(in_srgb,var(--color-noir)_88%,transparent)] transition-opacity duration-300 ${
         shown ? "opacity-100" : "opacity-0"
       }`}
     >

@@ -1,0 +1,46 @@
+{
+  "viewport": { "width": 390, "height": 844 },
+
+  "_comment": "THE PHONE PASS, AND IT IS NOT THE SAME CODE. 390 is below the 761px `tab` breakpoint, where ReelWallV6 drops its rotateY stage entirely (stageTransform reads `none`) and both walls lay out as horizontal rows rather than tilted columns. A pass at 1440 says nothing about this one. Run: node scripts/perf-audit.mjs --config perf-audit.390.json. Selectors are the 1440 set from perf-audit.config.json minus the nav links, which are `hidden ... tab:flex` in Nav.tsx and so do not exist at this width — a row for them would be an unreachable target rather than a finding.",
+
+  "hover": [
+    {
+      "name": "reel wall clip (rows)",
+      "selector": "[role='group'][aria-label^='A wall of recent'] button[aria-label^='Play'] >> nth=2"
+    },
+    { "name": "nav CTA", "selector": "header a:has-text('DM us your product')" },
+    { "name": "hero primary CTA", "selector": "#top a:has-text('DM us your product')" },
+    { "name": "why us pillar", "selector": "#why article" },
+    { "name": "work grid tile", "selector": "#work button[aria-label^='Play reel'] >> nth=3" },
+    {
+      "name": "testimonial card",
+      "selector": "button[aria-label^='Play the ad this reaction']"
+    },
+    { "name": "faq question", "selector": "#faq button[aria-expanded]" },
+    { "name": "pricing CTA", "selector": "#pricing a:has-text('Get your quote')" },
+    { "name": "footer link", "selector": "footer nav a >> nth=0" }
+  ],
+
+  "toggle": [
+    {
+      "name": "reel lightbox",
+      "open": "[role='group'][aria-label^='A wall of recent'] button[aria-label^='Play'] >> nth=2",
+      "close": "[aria-label='Close preview']"
+    },
+    {
+      "name": "work lightbox",
+      "open": "#work button[aria-label^='Play reel'] >> nth=3",
+      "close": "[aria-label='Close preview']"
+    },
+    {
+      "name": "faq accordion",
+      "open": "#faq button[aria-expanded]",
+      "close": "#faq button[aria-expanded]"
+    },
+    {
+      "name": "testimonial player",
+      "open": "button[aria-label^='Play the ad this reaction']",
+      "close": null
+    }
+  ]
+}

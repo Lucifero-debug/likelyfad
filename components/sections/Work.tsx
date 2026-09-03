@@ -160,6 +160,7 @@ function Tile({
   onOpen,
   label,
   lane,
+  enabled,
 }: {
   reel: Reel;
   onOpen: () => void;
@@ -167,6 +168,10 @@ function Tile({
   /** This tile's row, as a play-budget bucket. Unique across the page: the
       hero wall's columns are lanes too and must not collide with these. */
   lane: string;
+  /** False holds the tile on its poster and registers nothing with either
+      observer — see the same flag on LazyVideo and useInViewPlay. The wall
+      passes false under prefers-reduced-motion; the note in Work() says why. */
+  enabled: boolean;
 }) {
   return (
     <button type="button" onClick={onOpen} aria-label={label} className={TILE}>
@@ -202,6 +207,7 @@ function Tile({
           src={reel.src}
           poster={reel.poster}
           posterMode="element"
+          enabled={enabled}
           className="relative size-full object-cover"
         />
       </span>
@@ -307,6 +313,36 @@ export function Work() {
   const [paused, setPaused] = useState(false);
   const [sectionRef, near] = useNearViewport<HTMLElement>();
 
+  /* AUTOPLAYING VIDEO IS ITSELF MOVEMENT, AND THIS WALL WAS NOT ASKING.
+
+     The lanes were already covered: the reduced-motion block in globals.css
+     flattens every animation on the page, so the three marquees stop. The
+     CLIPS were not. LazyVideo defaults `enabled` to true and this wall never
+     passed it, so under the preference the tiles kept registering with the
+     playback registry and kept playing — measured on the production build with
+     reduced motion forced, scrolling to #work left 27 videos running while the
+     page reported zero running animations. The section looked still and was
+     not. ReelWallV6 has gated this from the start, for the reason stated in
+     its own effect; this is that gate, on the wall that carries three times
+     the clips.
+
+     Read once rather than subscribed, which is the call every other motion
+     effect in this repo makes: a visitor who changes the setting mid-session
+     gets it on their next navigation.
+
+     READ IN THE INITIALISER RATHER THAN IN AN EFFECT, which is where the hero
+     wall reads it. Two reasons, and neither is style. An effect would set
+     state on mount, and `react-hooks/set-state-in-effect` is an ERROR in this
+     config — the hero wall only escapes it because its own setPlay sits behind
+     an early return. And `enabled` reaches no markup: it is a dependency of
+     LazyVideo's attach effect and of useInViewPlay's registration, and neither
+     renders it, so a client-only value cannot desync the server HTML here.
+     Deciding before the first commit is also strictly better than deciding one
+     render after it — nothing has to register and then unregister. */
+  const [play] = useState(
+    () => typeof window !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -390,10 +426,17 @@ export function Work() {
           >
             <div
               /* Hovering a tile stops THIS row and leaves the other two
-                 running — see the same note on the hero wall's lane. */
+                 running — see the same note on the hero wall's lane.
+
+                 `active` STOPS ALL THREE, and it is the lightbox's blur that
+                 needs it rather than anything visual: a full-viewport
+                 backdrop-filter has to re-sample whatever moves behind it, so
+                 three marquees dragging 96 clips underneath an overlay nobody
+                 can see through were being paid for on every composited frame.
+                 Nothing is visible past the scrim, so nothing needs to move. */
               className={`flex w-max animate-lane-x gap-[clamp(8px,1.2vw,12px)] will-change-transform [&:has(button:hover)]:[animation-play-state:paused] ${
                 ROW_STYLE[ri].reverse ? "[animation-direction:reverse]" : ""
-              } ${paused || !near ? "[animation-play-state:paused]" : ""}`}
+              } ${paused || !near || active ? "[animation-play-state:paused]" : ""}`}
               style={{ animationDuration: ROW_STYLE[ri].duration }}
             >
               {[...row, ...row].map((clip, i) => (
@@ -402,6 +445,7 @@ export function Work() {
                   reel={clip}
                   lane={`work-row-${ri}`}
                   onOpen={() => setActive(clip)}
+                  enabled={play}
                   label={`Play reel ${ri * PER_ROW + (i % PER_ROW) + 1} full size`}
                 />
               ))}

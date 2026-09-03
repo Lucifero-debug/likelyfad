@@ -322,11 +322,14 @@ function getRegistry(): Registry {
    the hero wall's lane 0 and the work wall's row 0 are different queues.
 
    `enabled` false never registers the tile at all, so it holds its poster and
-   costs nothing — no observer entry, no slot, no fetch. It exists for the v8
-   wall, which treats autoplaying video as motion and switches it off under
-   prefers-reduced-motion; the two older walls never pass it and keep the
-   behaviour they had. It is a DEPENDENCY of the effect, so flipping it back
-   registers the tile normally rather than needing a remount. */
+   costs nothing — no observer entry, no slot, no fetch. It exists because
+   AUTOPLAYING VIDEO IS MOTION: every wall that passes it switches its clips
+   off under prefers-reduced-motion, where a tile shows its poster frame and
+   nothing else. ReelWallV6 and the v8 wall have always passed it; the work
+   wall does now — it was the one section where the preference stopped the
+   marquees and left 27 clips playing behind them. It is a DEPENDENCY of the
+   effect, so flipping it back registers the tile normally rather than needing
+   a remount. */
 export function useInViewPlay(lane: string, enabled = true) {
   const ref = useRef<HTMLVideoElement>(null);
 
