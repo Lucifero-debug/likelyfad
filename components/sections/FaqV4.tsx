@@ -178,7 +178,7 @@ export function FaqV4() {
   return (
     <section
       id="faq"
-      className={`${ANCHOR} mx-auto flex w-full max-w-[1280px] flex-col items-center px-[clamp(24px,4.4vw,56px)] py-[clamp(48px,5vw,64px)]`}
+      className={`${ANCHOR} mx-auto flex w-full max-w-[1280px] flex-col items-center px-[clamp(24px,4.4vw,56px)] py-[clamp(32px,4vw,48px)]`}
       aria-label="Frequently asked questions"
     >
       {/* HEADER — a 672 measure, centred, and NARROWER than the list below it.

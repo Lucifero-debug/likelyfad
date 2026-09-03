@@ -102,7 +102,7 @@ export function PricingV4() {
        be swapped for each other without the seams above and below moving. */
     <section
       id="pricing"
-      className={`${ANCHOR} mx-auto w-full max-w-[1280px] px-6 py-[clamp(48px,6vw,64px)] tab:px-14`}
+      className={`${ANCHOR} mx-auto w-full max-w-[1280px] px-6 py-[clamp(32px,4.5vw,48px)] tab:px-14`}
       aria-label={pricing.kicker}
     >
       {/* HEADER — 672, centred. 10 under the kicker is the tightest gap in the

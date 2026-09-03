@@ -21,11 +21,26 @@
    1800 was keyed to the OLD split hero, whose headline clamp topped out at a
    1798px viewport. That hero is parked; the number outlived it.
 
+   THE CEILING IS A RAMP NOW, AND IT IS DELIBERATELY INERT UP TO 1920. A flat
+   1520 stops adapting the moment the viewport passes it: on a 2560 display the
+   entire page sat in a 1520 band with 520px of dead paper down each side, which
+   is what "it does not scale up" looks like from the outside. The clamp fixes
+   that WITHOUT moving a single width anyone has designed against — 79.167vw is
+   exactly 1520 at a 1920 viewport, so every width from `lap:` up to 1920
+   resolves to the same 1520 it always did, the ramp only opens above that, and
+   it holds flat at 1920px from ~2425 up. 26% more stage on a large monitor and
+   nothing at all on a laptop.
+
+   IT IS STILL ONE MEASUREMENT WRITTEN IN TWO PLACES. HeroV6 spells the same
+   clamp out on its own stage, character for character. If one of them moves and
+   the other does not, the drift this number exists to prevent comes back — just
+   at the top of the range instead of the middle, which is harder to spot.
+
    The 1180 base is inert and kept only as the floor of the pair: `lap:` is
    961px, so below it the viewport is always narrower than 1180 and the cap
    never binds. Every width that can see a cap sees this one. */
 export const WRAP =
-  "mx-auto w-full max-w-[1180px] px-[clamp(24px,5vw,64px)] lap:max-w-[1520px]";
+  "mx-auto w-full max-w-[1180px] px-[clamp(24px,5vw,64px)] lap:max-w-[clamp(1520px,79.167vw,1920px)]";
 
 /* THE SPACING SCALE. Every gap on this page is one of the four constants
    below, and they are ORDERED: a section break is the largest number on the
@@ -40,15 +55,30 @@ export const WRAP =
    Keyed to viewport WIDTH rather than height: how much air a band needs is a
    function of how wide its measure is, and a vh-based version squeezed the
    whole page in a short window. Applied top and bottom, so adjacent sections
-   are separated by 80px on a phone and 128px on a desktop — larger than any
+   are separated by 64px on a phone and 96px on a desktop — larger than any
    padding inside them, which is what makes a boundary read as a boundary.
+
+   IT WAS 40/64, FOR A 128px DESKTOP SEAM, AND THAT READ AS TOO MUCH AIR ONCE
+   THE HERO STARTED FILLING THE VIEWPORT. A band that runs edge to edge on a
+   large display sets the expectation that the page is dense; 128px of paper
+   between every pair of sections under it argues the opposite. 96 is one rung
+   down and still clears the rule by 2x — the largest padding inside any band
+   on this page is the 48 on Why-us's claim card and Pricing's card, so the
+   seam has to beat 48 and does.
+
+   THE ORDERING IT HAS TO KEEP is against HEAD_GAP, not against itself: a
+   section break is the largest gap on the page, a heading's break the next.
+   That comparison is SEAM vs HEAD_GAP — 96 against 64 — not one side's 48
+   against 64. Drop this ceiling one more rung to 40 and the seam is 80 against
+   a 64 heading gap, which is close enough to stop reading as an ordering.
+   48 is the floor of what this number can be.
 
    THE SCALE ITSELF, which every authored number on this page is drawn from:
    4, 8, 12, 16, 24, 32, 40, 48, 64, 80, 96, 128, 160. BOTH ENDS of a clamp
    have to land on it; what the clamp resolves to between them does not, and
    cannot — that is the part that makes it fluid. This ceiling was 72, and the
    desktop seam it built was 144: neither is a rung. */
-export const SECTION = "py-[clamp(40px,6.5vw,64px)]";
+export const SECTION = "py-[clamp(32px,5vw,48px)]";
 
 /* Heading block → the content it introduces. Tops out at 64.
 

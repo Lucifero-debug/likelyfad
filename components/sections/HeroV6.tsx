@@ -86,8 +86,27 @@ const OPTICAL = "lap:ml-[-0.04em] lap:indent-[0.04em]";
 /* The two ends of the gap scale, and the rule behind them: the four columns of
    the wall are ONE object, so the space between them (16, in ReelWallV6) has to
    be clearly smaller than the space between the copy and the wall, which is the
-   real division on the page. */
-const SPLIT_GAP = "gap-[48px] lap:gap-[64px]";
+   real division on the page.
+
+   THE `lap:` END RAMPS WITH THE STAGE, on the same 1920-inert pattern as
+   STAGE below: 3.333vw is exactly 64 at a 1920 viewport, so nothing moves at or
+   under it, and it opens to 80 — the next rung up — as the stage widens. The
+   ratio against the wall column gap is what actually has to survive the change,
+   and 80:16 is the same 5:1 reading as 64:16. A fixed 64 beside a stage 400px
+   wider would have narrowed that division exactly where there is most room for
+   it. */
+const SPLIT_GAP = "gap-[48px] lap:gap-[clamp(64px,3.333vw,80px)]";
+
+/* THE STAGE — the hero's own cap and gutter, and WRAP's in lib/ui.ts are THE
+   SAME MEASUREMENT. It is what puts every section's first column on the same x
+   as the headline and the wall's left edge; the long note in that file is the
+   argument for the number and for the ramp, and this is the second of the two
+   places it is written. Move one, move both.
+
+   Spelled out here rather than imported because Tailwind scans source TEXT — a
+   class assembled from a variable is never emitted at all. Same constraint as
+   the clamps at the foot of lib/ui.ts. */
+const STAGE = "mx-auto w-full max-w-[clamp(1520px,79.167vw,1920px)] px-[clamp(24px,5vw,64px)]";
 
 /* THE WALL'S FOOTPRINT — AND IT STARTS AT `tab`, NOT AT EVERY WIDTH.
 
@@ -101,8 +120,67 @@ const SPLIT_GAP = "gap-[48px] lap:gap-[64px]";
    footage too small to read on the one device where the wall IS the page. Left
    to the content, each clip takes clamp(88,22vw,168) and the three rows come to
    roughly 500px on a phone. The crop that matters at that width is horizontal,
-   and it is the wall's own width, which needs no declaring. */
-const WALL_HEIGHT = "tab:h-[clamp(320px,48svh,448px)] lap:h-[min(72svh,680px)]";
+   and it is the wall's own width, which needs no declaring.
+
+   FROM `lap:` THE WALL TAKES THE WHOLE LEFTOVER HEIGHT, AND THAT IS WHAT
+   CLOSED THE GAP AT THE TOP AND BOTTOM OF THE SECTION.
+
+   It used to be a FRACTION of the viewport — min(72svh, 680px) — inside a
+   section that is min-h:100svh and centres its row. Those two do not agree on
+   tall screens, and the disagreement is pure dead paper: at 2560x1440 the
+   available box is 1440 - 96 - 64 = 1280, the wall and its caption came to 716,
+   and the 564px left over was split by `items-center` into 282px of nothing
+   above the hero and 282px below — ON TOP of the 96/64 the section already
+   declares. The px ceiling made it worse the taller the display got, because it
+   stopped scaling at a 944px window while the section never stops.
+
+   Subtracting instead of scaling makes the two agree by construction. The three
+   terms are the section's own box, written out rather than folded into one
+   number so each stays traceable to the thing it pays for:
+
+     96px — the section's pt, the fixed nav's clearance (91px tall at rest,
+            and transparent until scrolled, so this one cannot come down)
+     48px — the section's pb
+     48px — the caption row under the wall: its 16 top margin plus one line of
+            TEXT_META at the body's 1.6 leading, which is ~38 at the 0.85rem
+            ceiling. Rounded UP to the next rung on purpose. Subtracting the
+            measured 38 leaves the column 2px TALLER than the box it is being
+            fitted into, and a hero that overshoots 100svh by two pixels is a
+            scrollbar on a page that should not have one. 10px of slack costs
+            5px of centring at each end and cannot round the wrong way.
+
+   SO THE ONLY VERTICAL SPACE LEFT IS THE PADDING THE SECTION DECLARES. The row
+   now measures exactly the available height, `items-center` has nothing to
+   distribute, and the hero fills any display instead of floating in the middle
+   of one. IF EITHER PADDING MOVES, THIS MOVES WITH IT — they are one
+   measurement in two places, the same deal STAGE has with WRAP.
+
+   888px IS THE SECTION'S OWN CEILING, RESTATED. The section stops at 1080
+   (see the note on it), and 888 is what is left of 1080 after the same three
+   terms — so the wall stops growing at exactly the height the band stops
+   growing at, and neither one ends up with slack the other has to absorb. The
+   two numbers move together or not at all.
+
+   55vw IS NOT A DESIGN CEILING, IT IS THE SEAMLESSNESS INVARIANT. ReelWallV6
+   needs `oneSetHeight >= containerHeight` or the loop visibly hitches once a
+   cycle, and a set is four clips tall — so it scales with the wall's WIDTH
+   while the two terms above scale with its HEIGHT. A narrow window on a tall
+   monitor is where those come apart: at 961x1440 the height terms want 888 and
+   one set is only ~805, so the loop would break. Keyed to width the cap lands
+   at 529 there and it holds. Margin runs 22-49% across the range — 961:529 vs
+   805, 1200:660 vs 1034, 1440:792 vs 1282, and from ~1615 up the 888 takes over
+   against a set that is never below 1367.
+
+   THERE USED TO BE A FOURTH TERM, 1400px, guarding the case 55vw cannot: STAGE
+   stops at 1920, so past a ~2425 viewport the set stops growing at ~1776 while
+   55vw keeps reading the whole display, and on a 3440x2160 panel that pair
+   alone would have asked for 1892. The 888 is far below that and binds first at
+   every size, so the term is gone rather than kept as decoration. It comes back
+   if the section ceiling is ever raised past ~1590.
+
+   `debug` prints the two numbers it is actually checking. */
+const WALL_HEIGHT =
+  "tab:h-[clamp(320px,48svh,448px)] lap:h-[min(100svh_-_96px_-_48px_-_48px,888px,55vw)]";
 
 export function HeroV6({
   columns,
@@ -125,14 +203,44 @@ export function HeroV6({
          rather than a one-liner plus something to remember. Correct only while
          ONE hero is mounted. */
       id="top"
-      /* 100svh minus the fixed nav, which is 72px at rest. min-h rather than h,
-         so a short window scrolls the copy instead of clipping it. */
-      className="relative flex min-h-[100svh] items-center bg-paper pt-[96px] pb-[64px]"
+      /* 100svh minus the fixed nav. min-h rather than h, so a short window
+         scrolls the copy instead of clipping it.
+
+         AND IT STOPS AT 1080. A band that tracks 100svh forever does not make a
+         tall display look full, it makes the COPY look lost: the wall grows
+         with the viewport, the copy does not, and `items-center` turns the
+         difference into empty paper above and below the headline. At 2560x1440
+         that was 336px at each end — more than four times the section padding,
+         and the thing that actually read as "too much gap".
+
+         1080 is the height of a full-HD screen, so nothing at or below 1080svh
+         moves at all; it only binds on displays taller than that, which are
+         exactly the ones where the drift showed. The hero then ends around 80%
+         of a 1440 viewport, which also puts the top of Why-us on screen and
+         gives the fold something to point at.
+
+         RAISE THIS NUMBER TO MAKE THE HERO TALLER AGAIN — it and the 888 in
+         WALL_HEIGHT are one measurement (888 = 1080 - 96 - 48 - 48).
+
+         THE 96 AND THE 48 ARE READ BY WALL_HEIGHT, which subtracts both from
+         100svh so the wall fills whatever this section leaves and the row does
+         not float in the middle of a tall display. Change either number here
+         and change it there — the note above WALL_HEIGHT has the arithmetic.
+
+         THE BOTTOM CAME DOWN A RUNG, 64 TO 48, AND THE TOP CANNOT FOLLOW IT.
+         The 96 is not taste, it is the fixed nav's clearance, and the nav is
+         91px tall at rest and TRANSPARENT until it scrolls — so 96 already
+         leaves only ~10px between the nav's ink and the top of the wall. One
+         rung down and the first row of clips runs underneath live nav links on
+         a bare paper ground, with nothing behind them to separate the two. The
+         top of this section is spent, and the seam under it is where the air
+         actually was. */
+      className="relative flex min-h-[min(100svh,1080px)] items-center bg-paper pt-[96px] pb-[48px]"
     >
       {/* 40/60 on a laptop, stacked below it. The copy is FIRST in source, so
           the stacked order is copy then wall with nothing to declare. */}
       <div
-        className={`mx-auto grid w-full max-w-[1520px] items-center ${SPLIT_GAP} px-[clamp(24px,5vw,64px)] lap:grid-cols-[40fr_60fr]`}
+        className={`${STAGE} grid items-center ${SPLIT_GAP} lap:grid-cols-[40fr_60fr]`}
       >
         {/* ---- The copy, straight from Hero.tsx ----
 
