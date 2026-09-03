@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { useInViewPlay } from "@/lib/useInViewPlay";
+import { LazyVideo } from "@/components/ui/LazyVideo";
 import { Lightbox } from "@/components/ui/Lightbox";
 
 /* ============================================================================
@@ -238,7 +238,7 @@ export type ReelClip = {
 export type ReelColumns = [ReelClip[], ReelClip[], ReelClip[], ReelClip[]];
 
 /* ---------------------------------------------------------------------------
-   ONE CLIP. Its own component only because useInViewPlay is a hook and the
+   ONE CLIP. Its own component only because LazyVideo carries hooks and the
    column maps over an array — calling a hook inside that map would tie the
    hook order to the clip count. */
 function Clip({
@@ -255,8 +255,6 @@ function Clip({
   /** True only for the first rendered copy of a clip — see the note below. */
   reachable: boolean;
 }) {
-  const video = useInViewPlay(lane, play);
-
   return (
     <button
       type="button"
@@ -310,24 +308,18 @@ function Clip({
          the cell's padding — see the grid. */
       className="group relative aspect-[9/16] w-[clamp(88px,22vw,168px)] mr-[16px] flex-none cursor-pointer overflow-hidden rounded-[12px] bg-poster transition-[scale] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] hover:z-10 hover:scale-[1.06] focus-visible:z-10 focus-visible:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cue active:scale-[1.02] tab:mr-0 tab:mb-[16px] tab:w-full"
     >
-      <video
-        ref={video}
+      {/* preload="none" AND no src until the tile is near — LazyVideo owns
+          both, and useInViewPlay still owns playback. `metadata` here once
+          opened sixty media players and sixty requests during load for tiles
+          that mostly never become visible; the poster carries the layout until
+          something asks to play. The poster goes on the ATTRIBUTE rather than
+          into an <img>, unlike the work wall: every tile here is inside the
+          crop, so there is nothing for the browser's lazy loading to defer. */}
+      <LazyVideo
+        lane={lane}
+        enabled={play}
         src={clip.src}
         poster={clip.poster}
-        muted
-        loop
-        playsInline
-        /* none, not metadata. The wall holds sixty of these for sixteen distinct
-           reels, and useInViewPlay only ever starts the handful actually on
-           screen, staggered. `metadata` opened sixty media players and sixty
-           requests during load for tiles that mostly never become visible; the
-           poster carries the layout until something asks to play. */
-        preload="none"
-        /* The button is the control; the video inside it is never a tab stop of
-           its own and carries no label, or a screen reader would announce the
-           same clip twice. */
-        tabIndex={-1}
-        aria-hidden="true"
         className="size-full object-cover"
       />
     </button>

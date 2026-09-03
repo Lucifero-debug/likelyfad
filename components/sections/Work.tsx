@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { takeReels } from "@/lib/reelOrder";
 import type { Reel } from "@/lib/reels.generated";
+import { LazyVideo } from "@/components/ui/LazyVideo";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
 import { Reveal } from "@/components/ui/Reveal";
@@ -146,13 +147,15 @@ function Tile({
   reel,
   onOpen,
   label,
+  lane,
 }: {
   reel: Reel;
   onOpen: () => void;
   label: string;
+  /** This tile's row, as a play-budget bucket. Unique across the page: the
+      hero wall's columns are lanes too and must not collide with these. */
+  lane: string;
 }) {
-  const video = useAlwaysPlay();
-
   return (
     <button type="button" onClick={onOpen} aria-label={label} className={TILE}>
       {/* The clip gets its own box so the tile is free to paint shadows outside
@@ -160,46 +163,33 @@ function Tile({
           Safari has been unreliable about clipping video to its own corners,
           and overflow:hidden on a plain box is not. */}
       <span className="absolute inset-0 overflow-hidden rounded-[inherit]">
-        {reel.poster && (
-          /* eslint-disable-next-line @next/next/no-img-element -- a remote blob
-             URL already at the size it renders. next/image would mean a
-             remotePatterns entry and a proxy hop to re-encode a 24KB webp into
-             itself; the only thing wanted here is the browser's own lazy
-             loading, which a plain <img> gives directly. */
-          <img
-            src={reel.poster}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            className="absolute inset-0 size-full object-cover"
-          />
-        )}
-        {/* `relative` so the video is POSITIONED like the poster above it and
+        {/* posterMode="element", NOT the `poster` attribute, and it is the
+            whole reason this wall can afford 96 tiles. A poster attribute is
+            never lazy, so all 48 distinct webps would be fetched the moment
+            the section mounted; a real <img loading="lazy"> lets the browser
+            defer everything off screen, so entering the section pays for
+            roughly the dozen tiles per row actually visible and the rest
+            arrive as they translate in. `bg-[#1a1620]` on the tile is what
+            shows until one lands.
+
+            THE lazy ATTRIBUTE WAS MISSING FROM THE <img> THIS REPLACES. The
+            note here has argued for it since the poster stopped being a CSS
+            background, but only `decoding="async"` was ever on the element, so
+            all 48 fetched on first paint — 1.7MB of the 2.3MB of posters a
+            cold load pulled. LazyVideo carries the attribute now.
+
+            Setting a poster attribute AND an <img> makes the browser hold two
+            decoded rasters of the same webp per tile, which is why LazyVideo
+            makes the two modes a choice rather than a pair. */}
+        {/* `relative` so the video is POSITIONED like the poster behind it and
             paint order falls back to DOM order. Left static it would paint in
             the in-flow step, which comes before positioned descendants — and
             the poster would sit on top of the playing clip. */}
-        {/* autoPlay AND an explicit play() call, which is belt and braces on
-            purpose. `autoPlay` is what starts a tile the browser considers
-            ordinary; the effect covers the ones it does not, since a muted
-            autoplaying video inside a content-visibility subtree that has never
-            been rendered is exactly the shape user agents apply power-saving
-            heuristics to. Calling play() on an already-playing element is a
-            no-op, so the two cannot fight.
-
-            preload="auto", NOT "none". `none` is what the in-view version
-            wanted — nothing fetched until a tile was chosen to play — and it is
-            contradictory here: every tile is chosen, immediately, so saying
-            "none" only delays the fetch by one round trip and says something
-            untrue about the intent. */}
-        <video
-          ref={video}
+        <LazyVideo
+          lane={lane}
           src={reel.src}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          tabIndex={-1}
+          poster={reel.poster}
+          posterMode="element"
           className="relative size-full object-cover"
         />
       </span>
@@ -207,37 +197,28 @@ function Tile({
   );
 }
 
-/* PLAY EVERY TILE, FOREVER, AND DO NOT ASK WHERE IT IS.
+/* THIS WALL IS BACK ON THE SHARED PLAYBACK REGISTRY.
 
-   One ref, one play() on mount, no observer and no registry. It is the whole
-   of this wall's playback policy — see the note at the head of the file for
-   what that costs and what it opts out of.
+   IT USED TO PLAY EVERY TILE, FOREVER, AND NOT ASK WHERE IT WAS — one ref, one
+   play() on mount, no observer, `autoPlay` and preload="auto". That policy was
+   deliberate and it was measured to be the single most expensive thing on the
+   page: on a 1920x1080 load with nothing scrolled, all 96 tiles were playing
+   and fully buffered while sitting below the fold, which was 60 distinct clips
+   and 18MB of video before the visitor had moved. `content-visibility: auto` on
+   the section skips layout, paint and compositing for the subtree but does
+   nothing whatever about network or decode, so it never covered this.
 
-   THE `canplay` LISTENER IS NOT DEFENSIVE PADDING. play() before the element
-   has decodable data rejects rather than queueing, and with 96 clips opening at
-   once on a slow line a good number of them are in exactly that state at mount.
-   Retrying on the first frame that can be shown is what makes the wall fill in
-   as bytes arrive instead of leaving whichever tiles lost the race on their
-   posters for good. It is removed on cleanup, and play() on an element already
-   playing is a no-op, so a tile that started normally pays nothing for it. */
-function useAlwaysPlay() {
-  const ref = useRef<HTMLVideoElement>(null);
+   Every tile is a LazyVideo now, keyed to a lane per row. What that buys, and
+   the reasoning behind each number, is in lib/useInViewPlay: the source is not
+   attached until a tile is within 200px of the viewport, at most PER_LANE play
+   at once per row, a dwell means tiles you scroll PAST never fetch at all, and
+   starts are staggered so a row does not open sixteen streams into one pipe.
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    /* Rejects under some autoplay policies. The poster underneath stays up in
-       that case, which is the correct fallback. */
-    const start = () => void el.play().catch(() => {});
-
-    start();
-    el.addEventListener("canplay", start);
-    return () => el.removeEventListener("canplay", start);
-  }, []);
-
-  return ref;
-}
+   WHAT IT COSTS, stated plainly because the old policy existed to avoid it: a
+   tile entering the row holds its poster for the dwell before it starts, and
+   the tiles bunched at the feeding edge wait for a slot. That is the same
+   behaviour the hero wall has always had, and the FIFO ordering puts the held
+   ones under the row's own edge fade. */
 
 /* WHETHER THIS SECTION'S MARQUEES SHOULD BE RUNNING AT ALL.
 
@@ -391,6 +372,7 @@ export function Work() {
                 <Tile
                   key={`${ri}-${i}`}
                   reel={clip}
+                  lane={`work-row-${ri}`}
                   onOpen={() => setActive(clip)}
                   label={`Play reel ${ri * PER_ROW + (i % PER_ROW) + 1} full size`}
                 />

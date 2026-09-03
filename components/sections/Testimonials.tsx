@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { reelVideos, type Reel } from "@/lib/reels.generated";
+import { LazyVideo } from "@/components/ui/LazyVideo";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import {
@@ -545,16 +546,21 @@ function Card({
                   THE TILE CUT, NOT THE HQ ONE — small, silent, and already what
                   both walls play. A hover is not a request for audio. */}
               {preview && (
-                <video
+                <LazyVideo
                   src={reel.src}
-                  poster={reel.poster ?? undefined}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
+                  poster={reel.poster}
+                  /* IMMEDIATE, AND THIS IS THE ONE PLACE THAT IS RIGHT. The
+                     element only exists because a pointer is already on the
+                     card, so both of LazyVideo's gates are answers to a
+                     question nobody asked: an intersection test on a tile the
+                     visitor is looking at, then a dwell and a place in the
+                     start queue, would answer a hover a third of a second
+                     late. `immediate` attaches and plays on mount and
+                     registers no lane — which is also why the lane below is
+                     inert and named only to satisfy the prop. */
+                  immediate
                   preload="auto"
-                  tabIndex={-1}
-                  aria-hidden="true"
+                  lane="testimonial-preview"
                   onPlaying={() => setReady(true)}
                   /* The hairline is driven from here rather than from a
                      requestAnimationFrame loop: timeupdate is the event the
