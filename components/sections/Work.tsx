@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { takeReels } from "@/lib/reelOrder";
+import { useLeanRowLength } from "@/lib/useLeanWall";
 import type { Reel } from "@/lib/reels.generated";
 import { LazyVideo } from "@/components/ui/LazyVideo";
 import { Lightbox } from "@/components/ui/Lightbox";
@@ -60,7 +61,13 @@ const ROWS = 3;
 /* Each row renders its clips TWICE and slides by exactly half its own length,
    so ONE copy has to be wider than the viewport or the wrap point comes into
    frame. Sixteen tiles at a ~170px pitch is ~2720px, which covers a 2560
-   monitor. Do not cut this to trim DOM nodes without redoing that sum. */
+   monitor. Do not cut this to trim DOM nodes without redoing that sum.
+
+   IT IS THE CEILING NOW RATHER THAN THE COUNT, and only on machines that report
+   themselves weak — see useLeanRowLength in lib/useLeanWall.ts, which redoes
+   exactly that sum against the actual viewport instead of against a 2560
+   monitor nobody on a phone is holding. This number is still what every other
+   visitor gets, and still what the server renders for all of them. */
 const PER_ROW = 16;
 /* Starts past everything the hero wall shows (3 lanes x 6), so the two walls
    are never running the same clip at the same moment. */
@@ -343,6 +350,25 @@ export function Work() {
     () => typeof window !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
+  /* HOW MANY TILES EACH LANE ACTUALLY NEEDS ON THIS MACHINE. PER_ROW on
+     everything that does not report itself weak, which is the server's answer
+     and therefore the one the markup hydrates against; on a weak machine, the
+     count that spans this viewport and no more. The wall looks the same either
+     way — see the note at the head of lib/useLeanWall.ts for why a lane can
+     lose two thirds of its tiles without losing anything you can see. */
+  const perRow = useLeanRowLength(PER_ROW);
+
+  /* Sliced rather than re-dealt, so a trimmed lane is a PREFIX of the same
+     column-major deal ROWS_OF_PICKS already made. Re-running takeReels against
+     a smaller count would re-do the union-find spread and could pull two clips
+     from one shoot next to each other, which is the one thing that deal exists
+     to prevent. */
+  const rows = useMemo(
+    () =>
+      perRow >= PER_ROW ? ROWS_OF_PICKS : ROWS_OF_PICKS.map((row) => row.slice(0, perRow)),
+    [perRow]
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -394,7 +420,7 @@ export function Work() {
           edge, which is what the fade sells. The two overlays span all three
           rows, so the effect costs two elements rather than one mask per row. */}
       <div className="relative flex flex-col gap-[clamp(8px,1.2vw,12px)]">
-        {ROWS_OF_PICKS.map((row, ri) => (
+        {rows.map((row, ri) => (
           <div
             key={ri}
             /* Hovering a row dims everything except the tile under the pointer,
@@ -446,7 +472,12 @@ export function Work() {
                   lane={`work-row-${ri}`}
                   onOpen={() => setActive(clip)}
                   enabled={play}
-                  label={`Play reel ${ri * PER_ROW + (i % PER_ROW) + 1} full size`}
+                  /* Numbered off the count this lane actually rendered, not off
+                     PER_ROW: the two diverge on a trimmed wall, and against the
+                     constant the second copy of the set would be announced with
+                     a different number from the first — the same clip, twice,
+                     under two names. */
+                  label={`Play reel ${ri * row.length + (i % row.length) + 1} full size`}
                 />
               ))}
             </div>
