@@ -130,10 +130,52 @@ const COLUMNS = 4;
    would pull the columns apart rather than speed them up together. */
 const AMBIENT_BASE_SECONDS = 180;
 
-const AMBIENT_DURATION: string[] = Array.from(
+const AMBIENT_SECONDS: number[] = Array.from(
   { length: COLUMNS },
-  (_, i) => `${(AMBIENT_BASE_SECONDS / Math.pow(SPEED_RATIO, i)).toFixed(2)}s`
+  (_, i) => +(AMBIENT_BASE_SECONDS / Math.pow(SPEED_RATIO, i)).toFixed(2)
 );
+
+/* The same figures as a CSS time, for the readout. The lanes themselves take
+   the number rather than this, because a duration that a breakpoint can scale
+   has to be arithmetic — see --lane-speed on the lane. */
+const AMBIENT_DURATION: string[] = AMBIENT_SECONDS.map((n) => `${n}s`);
+
+/* ---------------------------------------------------------------------------
+   THE PHONE RUNS THE SAME DURATIONS OVER A MUCH SHORTER SET, WHICH IS WHY IT
+   READS AS SLOWER THAN THE DESKTOP WALL RATHER THAN THE SAME.
+
+   A duration here is the time to travel ONE SET, not a speed — so the pixels
+   per second it works out to depend entirely on how long a set is, and the two
+   layouts are nowhere near each other. Measured on the production build:
+
+     1440 wide, columns   set 1395px / 180s  =  7.8 px/s   (column 1)
+      390 wide, rows      set  438px / 180s  =  2.4 px/s   (row 1)
+
+   Same number, a THIRD of the speed, because a phone's set is a third of the
+   length. Nothing was tuned for that; it fell out of one constant serving two
+   layouts, and on a phone the wall sits close to the edge of reading as still.
+
+   6.4 IS PAST PARITY, DELIBERATELY, AND PARITY IS 3.2. Matching the desktop
+   wall in px/s would put the rows at 7.8-17; 6.4 puts them at 15.6, 23.4 and
+   35 px/s, so the phone wall is the FASTEST version of itself on the site —
+   above the 26 px/s the desktop's quickest column runs at, not below it.
+
+   THAT IS A CHOICE ABOUT WHAT THE WALL IS ON A PHONE RATHER THAN A CONVERSION.
+   On a laptop it sits beside the copy and is read past; on a phone it is the
+   band you land on, and the motion is doing the work the headline's neighbour
+   does up there. The ceiling to watch for is the point where a lane stops
+   reading as a wall of footage and starts reading as a reel being scrubbed —
+   the tell is a clip you cannot settle on before it has gone.
+
+   THE COST IS UNCHANGED. Below `tab` there is no 3D stage and no perspective,
+   so a lane is a plain 2D translate on a composited layer; what it costs per
+   frame is the layer, not the distance it moves in one. Speed here buys nothing
+   back and spends nothing either.
+
+   IT IS A DIVISOR ON THE DURATION, so it says SPEED and reads the way you would
+   want to change it: raise it to go faster. Above `tab` it is unset and the
+   fallback of 1 leaves the desktop wall at exactly the durations above.
+   ------------------------------------------------------------------------ */
 
 /* HOW MANY COPIES OF THE CLIP LIST EACH COLUMN RENDERS, and this is the number
    that stops the wall going blank at an unlucky moment.
@@ -660,7 +702,14 @@ export function ReelWallV6({
                   /* Read by the wall6-lane keyframe, which slides the track by
                      exactly 100%/sets — one set, whatever the count. */
                   "--sets": sets,
-                  animationDuration: AMBIENT_DURATION[c],
+                  "--lane-secs": AMBIENT_SECONDS[c],
+                  /* ARITHMETIC RATHER THAN A LITERAL TIME, so a breakpoint can
+                     scale it. An inline style cannot carry a media query, and
+                     the duration differs per column — so the per-column part
+                     stays here as a number and the per-breakpoint part arrives
+                     as a class. --lane-speed defaults to 1, which is what every
+                     width above `tab` gets. */
+                  animationDuration: "calc(var(--lane-secs) * 1s / var(--lane-speed, 1))",
                 } as CSSProperties}
                 /* NO will-change HERE, DELIBERATELY, AND IT USED TO BE ON THIS
                    AND ON THE DRIFT LAYER BOTH. It is the standard advice for an
@@ -705,7 +754,11 @@ export function ReelWallV6({
                    frame it is composited. Four lanes sliding under an overlay
                    nobody can see through were being paid for and seen by
                    no one. The same stop is in Work, which has three. */
-                className={`flex w-max animate-wall6-lane-x [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col ${
+                /* max-tab: is BELOW the breakpoint, the one direction the rest
+                   of this file never needs — every other rule here is `tab:` and
+                   up. It is the phone layout that runs short sets, so it is the
+                   phone layout that has to divide. See AMBIENT_SECONDS. */
+                className={`flex w-max animate-wall6-lane-x max-tab:[--lane-speed:6.4] [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col ${
                   active ? "[animation-play-state:paused]" : ""
                 }`}
               >
