@@ -63,7 +63,7 @@ import { useEffect, useRef } from "react";
    the last step available here. If the feeding-edge band still reads as broken
    after this, THE FIX IS THE FADE OVER IT, NOT THIS NUMBER — see FADE in
    Work.tsx, which is sized to cover the tile this budget cannot reach. */
-const PER_LANE = 11;
+const PER_LANE = 6;
 
 /* A tile counts as on screen at a fifth visible, which is roughly the point it
    clears the fade. */
