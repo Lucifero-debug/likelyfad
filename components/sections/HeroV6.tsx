@@ -182,6 +182,37 @@ const STAGE = "mx-auto w-full max-w-[clamp(1520px,79.167vw,1920px)] px-[clamp(24
 const WALL_HEIGHT =
   "tab:h-[clamp(320px,48svh,448px)] lap:h-[min(100svh_-_96px_-_48px_-_48px,888px,55vw)]";
 
+/* CORNER TO CORNER BELOW `tab`, AND ONLY THERE.
+
+   The wall sits inside STAGE, which pads `clamp(24px,5vw,64px)` a side, and on
+   a phone that padding is the whole difference between a wall and a strip: the
+   rows run off both edges of the screen or they sit in a frame that announces
+   how far they DON'T run. This cancels the padding for the wall alone — the
+   caption below it stays in the column with the copy, which is where a line of
+   type belongs.
+
+   THE EXPRESSION MUST BE STAGE'S, CHARACTER FOR CHARACTER. It is one
+   measurement in two places, the same deal WALL_HEIGHT has with the section's
+   96 and 48: a negative margin that does not exactly cancel the padding either
+   leaves a sliver of paper at each edge or pushes the wall past the viewport
+   and gives the page a horizontal scrollbar. Change STAGE and change this.
+
+   IT IS NOT A FREE 48px, AND THE CLIP CLAMP PAID FOR IT. Below `tab` the lanes
+   run sideways and ReelWallV6's invariant is `oneSetWidth >= the wall's own
+   width` — so widening the wall to the full viewport tightened the very margin
+   that keeps the loop seamless. At the old 22vw a set stopped outrunning the
+   viewport at ~533px wide, which is inside the range this layout covers. The
+   clamp in ReelWallV6's Clip went to 24vw to buy it back; the arithmetic is in
+   the note there. Widen the bleed further, or narrow that clamp, and the wrap
+   point comes on screen.
+
+   `mx` RATHER THAN A NEGATIVE INSET OR A width: 100vw. The wall is a block in a
+   grid cell, so symmetric negative margins let it resolve its own width against
+   a box 48px wider than the cell — no positioning, no stacking context, and
+   nothing that has to know how wide the viewport is. 100vw would also count the
+   scrollbar, which is how full-bleed usually earns its horizontal scroll. */
+const WALL_BLEED = "-mx-[clamp(24px,5vw,64px)] tab:mx-0";
+
 export function HeroV6({
   columns,
   debug = false,
@@ -303,7 +334,7 @@ export function HeroV6({
 
         {/* ---- The wall ---- */}
         <div className="min-w-0">
-          <ReelWallV6 columns={columns} className={WALL_HEIGHT} debug={debug} />
+          <ReelWallV6 columns={columns} className={`${WALL_BLEED} ${WALL_HEIGHT}`} debug={debug} />
 
           <p
             className={`mt-[16px] text-center font-mono ${TEXT_META} uppercase tracking-[0.06em] text-ink-faint lap:text-left`}

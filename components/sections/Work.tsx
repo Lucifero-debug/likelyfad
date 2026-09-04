@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { content } from "@/lib/content";
 import { takeReels } from "@/lib/reelOrder";
+import { HOT } from "@/lib/useInViewPlay";
 import { useLeanRowLength } from "@/lib/useLeanWall";
 import type { Reel } from "@/lib/reels.generated";
 import { LazyVideo } from "@/components/ui/LazyVideo";
@@ -209,12 +210,22 @@ function Tile({
             paint order falls back to DOM order. Left static it would paint in
             the in-flow step, which comes before positioned descendants — and
             the poster would sit on top of the playing clip. */}
+        {/* THE WALL IS THE EXHIBIT, SO ITS LANES RUN HOT. The default policy is
+            built for a wall you scroll past and it made this one look broken:
+            measured at 1440x900, parked here, 0 of 28 visible tiles were moving
+            at one second, 17 at three, and every scroll gesture took all of
+            them back to zero. HOT removes the dwell and the scroll pause, cuts
+            the stagger, and starts tiles 150px before they reach the edge so
+            they slide in already running. The ceiling is still a ceiling and an
+            off-screen tile still costs nothing — see PlayPolicy in
+            lib/useInViewPlay.ts for what each number buys and what it costs. */}
         <LazyVideo
           lane={lane}
           src={reel.src}
           poster={reel.poster}
           posterMode="element"
           enabled={enabled}
+          policy={HOT}
           className="relative size-full object-cover"
         />
       </span>

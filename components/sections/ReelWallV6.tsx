@@ -296,9 +296,27 @@ function Clip({
          width at the wrap — so past a point the only way to keep the loop
          seamless is to carry another copy of every clip, which is four more
          <video> per lane. That is the trade this clamp is really making: at
-         20vw/124px the wall needed 60 elements, at 22vw/168px it needs 44.
+         20vw/124px the wall needed 60 elements, at 22vw/168px it needed 44.
          Actual phones barely notice the difference (84px against 88px at 390);
          it is tablets in portrait that get the wider clips.
+
+         24vw, AND THE FULL-BLEED WALL IS WHY. The wall now cancels STAGE's
+         padding below `tab` (see WALL_BLEED in HeroV6), so the width the set
+         has to outlast is the WHOLE VIEWPORT rather than the viewport less
+         48-76px. Four clips at `w + 16` have to span V, so `w >= 0.25V - 16`:
+         at 22vw that held to ~533px wide and then quietly stopped, which is
+         inside the range this layout covers. At 24vw the worst case in the
+         whole band is 760px, where a set measures 794 against a 760 viewport —
+         34px of margin, and the margin only grows as the screen narrows (48px
+         at 390, 96px at 320). The cap moved 168 -> 184 for the same reason: it
+         binds from ~767px up, which is above `tab`, so it never actually
+         governs here — it is kept in step so the clamp reads as one ramp.
+
+         THE FLOOR DID NOT MOVE, so nothing changes at all below ~367px wide.
+         Between there and `tab` clips are ~9% wider than they were, which is
+         also ~9% more wall height: three rows of a 9:16 box. That is the visible
+         cost of the bleed, and it is paid in the direction the bleed wanted
+         anyway — bigger footage on the one device where the wall IS the page.
 
          THE HOVER GROWS THE CARD AND RAISES IT OVER ITS NEIGHBOURS. transform
          and opacity only: those composite, where a width or a box-shadow would
@@ -306,7 +324,7 @@ function Clip({
          z-10 is what lets the magnified card overlap the clips above and below
          instead of being painted under them. Horizontal room for it comes from
          the cell's padding — see the grid. */
-      className="group relative aspect-[9/16] w-[clamp(88px,22vw,168px)] mr-[16px] flex-none cursor-pointer overflow-hidden rounded-[12px] bg-poster transition-[scale] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] hover:z-10 hover:scale-[1.06] focus-visible:z-10 focus-visible:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cue active:scale-[1.02] tab:mr-0 tab:mb-[16px] tab:w-full"
+      className="group relative aspect-[9/16] w-[clamp(88px,24vw,184px)] mr-[16px] flex-none cursor-pointer overflow-hidden rounded-[12px] bg-poster transition-[scale] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] hover:z-10 hover:scale-[1.06] focus-visible:z-10 focus-visible:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cue active:scale-[1.02] tab:mr-0 tab:mb-[16px] tab:w-full"
     >
       {/* preload="none" AND no src until the tile is near — LazyVideo owns
           both, and useInViewPlay still owns playback. `metadata` here once

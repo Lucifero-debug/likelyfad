@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type ReactEventHandler } from "react";
-import { useInViewPlay } from "@/lib/useInViewPlay";
+import { useInViewPlay, type PlayPolicy } from "@/lib/useInViewPlay";
 
 /* ============================================================================
    THE ONE VIDEO TILE. Every autoplaying clip on the page is this component, so
@@ -118,6 +118,11 @@ type Props = {
   /** False holds the tile on its poster and registers nothing — see the same
       flag on useInViewPlay. */
   enabled?: boolean;
+  /** How eagerly this tile's LANE plays: the ceiling, the dwell, the stagger,
+      the scroll pause and the lead margin. Omitted everywhere the conservative
+      default is right, which is everywhere the wall is something you scroll
+      past. See PlayPolicy in lib/useInViewPlay.ts. */
+  policy?: PlayPolicy;
   ariaHidden?: boolean;
   onPlaying?: ReactEventHandler<HTMLVideoElement>;
   onTimeUpdate?: ReactEventHandler<HTMLVideoElement>;
@@ -133,6 +138,7 @@ export function LazyVideo({
   immediate = false,
   preload = "none",
   enabled = true,
+  policy,
   ariaHidden = true,
   onPlaying,
   onTimeUpdate,
@@ -140,7 +146,7 @@ export function LazyVideo({
   /* The registry's ref IS this component's ref — there is only one element and
      both effects want it. `immediate` and `enabled: false` both register
      nothing, and the hook still hands back a usable ref either way. */
-  const video = useInViewPlay(lane, enabled && !immediate);
+  const video = useInViewPlay(lane, enabled && !immediate, policy);
 
   useEffect(() => {
     const el = video.current;
