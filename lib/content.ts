@@ -171,6 +171,44 @@ export const content = {
         reel: "doctor-in-office-ai-ugc-health-product",
         label: "Health · UGC",
       },
+
+      /* PLACEHOLDERS — THE THREE BELOW ARE NOT CLIENT-WRITTEN. They exist to
+         fill the grid's second row while real messages are collected, and they
+         break the rule at the head of this block on purpose and temporarily.
+         Replace each `quote` and `who` with something a client actually sent
+         before this goes live, or delete the three items. Nothing else in the
+         section has to change either way — the grid is auto-fit, so it takes
+         three, six or any other count without edits. */
+      {
+        quote: "Ran it as-is. Cheapest CPA we've had this quarter.",
+        who: "Growth lead, apparel brand · on a podcast-style cut",
+        reel: "hoodie-ad-podcast-style",
+        label: "Apparel · Podcast-style",
+      },
+      {
+        quote: "My team argued about which parts were shot. None of it was.",
+        who: "Founder, fragrance brand",
+        reel: "ai-ugc-gym-perfume-ad",
+        label: "Fragrance · UGC",
+      },
+      {
+        quote: "Turnaround is the part I can't get anywhere else. Two days, done.",
+        who: "Marketing manager, supplements brand · after the second batch",
+        reel: "expert-doctor-review-ai-ugc",
+        label: "Health · Expert review",
+      },
+      {
+        quote: "Send four more in this format. Same energy.",
+        who: "Founder, beauty brand · on a blind-test cut",
+        reel: "perfume-blind-test-1",
+        label: "Beauty · Blind test",
+      },
+      {
+        quote: "Our best-performing creative this month, and nobody in comments clocked it.",
+        who: "Performance marketer, supplements brand",
+        reel: "doctor-and-specialist-podcast-viral-ai-ugc",
+        label: "Health · Two-hander",
+      },
     ],
   },
 

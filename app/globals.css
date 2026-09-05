@@ -211,6 +211,81 @@
       rgba(138, 79, 224, 0) 100%);
 }
 
+/* THE REEL WALL'S VERTICAL BLEND — the top and bottom edges only, and only
+   once the wall is in its column layout.
+
+   WHY THIS IS IN THE STYLESHEET AND NOT ON THE ELEMENT. It needs two things a
+   utility cannot give it at once: a comma-separated gradient (Tailwind scans
+   source TEXT and an arbitrary value carrying commas does not survive the
+   scan) and a breakpoint (an inline style cannot hold a media query). That is
+   exactly the "what is left here is what a utility cannot be" case this file's
+   header describes, so it lives with .aura rather than in the component.
+
+   TOP AND BOTTOM ONLY, WHICH IS THE WHOLE POINT. An earlier version of this
+   masked all four edges and the left/right pair was the half that read wrong —
+   the tilted plane is meant to run OUT of its frame sideways, and softening
+   that edge made the wall look like it was dissolving rather than continuing.
+   Vertically the opposite is true: the lanes are travelling on that axis, so a
+   clip entering or leaving at a hard cut is the one place the loop announces
+   itself. This fades where the motion is and leaves the crop alone where it is
+   not. A single gradient, so there is no mask-composite here and none is
+   needed — that only existed to intersect two axes.
+
+   A MASK, NOT AN OVERLAY, AND THE DIFFERENCE IS NOT COSMETIC. A gradient div
+   painted over the wall ADDS paper-coloured pixels, and paper at 50% over a
+   dark video frame composites to grey — a band of grey along an edge reads as a
+   shadow, which is why two earlier overlay attempts were deleted. A mask
+   SUBTRACTS alpha from the wall's own pixels, so the clips dissolve to nothing
+   and the page shows through unmixed. Measured on the rendered page, the masked
+   edge lands on rgb(251,249,246), which is --color-paper exactly, with no grey
+   introduced anywhere in the ramp.
+
+   761px IS --breakpoint-tab, RESTATED. A media query cannot read a custom
+   property, so the number is spelled out here and is one measurement in two
+   places — change --breakpoint-tab and change this. It is deliberately the
+   breakpoint where the wall turns from horizontal rows into vertical columns:
+   below it the lanes travel sideways, and a top/bottom fade would be eating the
+   HEIGHT of a row it is not moving through. On a phone the wall keeps four
+   clean edges, which is what it is supposed to have there.
+
+   --wall-blend IS THE SIZE DIAL, the reference's "Fade Size". A percentage
+   resolves against the wall's own height, so the ramp stays proportionate as
+   the wall grows; the floor and ceiling stop it vanishing on a short window or
+   swallowing a whole clip on a tall one. At the wall's 888px ceiling it comes
+   out at ~89px, which is roughly a quarter of one tile.
+
+   FOR "FADE INTENSITY", change the `#0000` end stops to something like
+   rgb(0 0 0 / 0.25) — that leaves a quarter of the wall standing at the extreme
+   edge instead of clearing it. Do both ends or they stop matching.
+
+   IF preserve-3d IS EVER ADDED TO THE WALL'S STAGE, THIS SILENTLY BREAKS IT.
+   A mask forces its subtree to be rendered into one group before compositing,
+   which flattens 3D — so a per-column depth ramp would not error, it would just
+   stop existing. See the note at the head of ReelWallV6.tsx, which records the
+   same trap for `overflow`. */
+.reel-wall-blend {
+  --wall-blend: clamp(40px, 10%, 120px);
+}
+
+@media (min-width: 761px) {
+  .reel-wall-blend {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #0000 0,
+      #000 var(--wall-blend),
+      #000 calc(100% - var(--wall-blend)),
+      #0000 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #0000 0,
+      #000 var(--wall-blend),
+      #000 calc(100% - var(--wall-blend)),
+      #0000 100%
+    );
+  }
+}
+
 ::selection {
   background: var(--color-pink);
   color: #fff;

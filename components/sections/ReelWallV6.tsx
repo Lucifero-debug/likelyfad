@@ -640,7 +640,12 @@ export function ReelWallV6({
          degree turn produced about 2% of scale difference across a column,
          which is below the threshold where the eye reads "angled" at all. It
          was a very long lens on a very small subject. */
-      className={`relative overflow-hidden tab:[perspective:900px] ${className}`}
+      /* `reel-wall-blend` fades the top and bottom edges from `tab` up — it is
+         a class rather than an inline style because it needs a media query and
+         a comma-separated gradient at the same time, and neither survives a
+         utility. It is defined in globals.css beside .aura, with the whole
+         argument for why it is a mask rather than an overlay. */
+      className={`reel-wall-blend relative overflow-hidden tab:[perspective:900px] ${className}`}
     >
       {/* The columns are one object; the split between copy and wall is the real
           division on the page. Hence 16 here against the 48/64 the hero uses. */}
@@ -878,68 +883,58 @@ export function ReelWallV6({
         })}
       </div>
 
-      {/* NO EDGE FADES ON ANY SIDE, AT ANY WIDTH, AND THIS IS THE THIRD TIME.
-          Every edge of this wall is a clean cut, on the phone and on the
-          desktop. Read the whole of this before adding a fourth attempt.
+      {/* THE EDGES, AND WHICH OF THEM FADE. Top and bottom are masked from
+          `tab` up by `reel-wall-blend` on this component's outer box; left and
+          right are hard cuts at every width, and so are all four on a phone.
+          The mask itself and the reasoning for its numbers are in globals.css.
+          This note is the history, because the answer took four attempts and
+          three of them are worth not repeating.
 
-          WHAT HAS BEEN TRIED, IN ORDER:
+          WHAT WAS TRIED, IN ORDER:
 
             1. TOP AND BOTTOM OVERLAYS. A 64px paper ramp at each end from `tab`
                up, as absolutely positioned gradient divs. Removed: read as a
                shadow across the top and bottom of the section.
             2. LEFT AND RIGHT OVERLAYS. A 3% ramp left, 6% right, same
-               mechanism, softening the edges the tilted plane is cropped by.
-               Removed for the same objection, down both sides.
-            3. A MASK ON THE BOX, all four edges at once. Removed for the same
-               objection again, which is the finding this note exists to carry.
+               mechanism. Removed for the same objection, down both sides.
+            3. A MASK ON ALL FOUR EDGES, at every width. Removed too, but not
+               for the reason the first two were, which is the finding that
+               produced the version standing today.
+            4. A MASK ON TOP AND BOTTOM ONLY, from `tab` up. This one.
 
-          THE THIRD ATTEMPT IS THE INFORMATIVE ONE, because it rules out the
-          explanation the first two left standing. The overlays were assumed to
-          have failed because they PAINTED: a paper-coloured scrim at 50% over a
-          dark video frame composites to grey, and a band of grey along an edge
-          is a shadow by definition. A mask cannot do that — it subtracts alpha
-          from the wall's own pixels rather than adding a colour over them, so
-          the page shows through unmixed. That was measured rather than assumed:
-          sampling the rendered page put the left edge, the right edge and 60px
-          into the ramp at rgb(251,249,246), which is --color-paper exactly, and
-          the top and bottom within about 2% of it while keeping paper's own warm
-          R > G > B ordering. There was no grey anywhere in the fade.
+          THE THIRD ATTEMPT IS WHERE THE ANSWER CAME FROM. The overlays were
+          assumed to have failed because they PAINTED: a paper-coloured scrim at
+          50% over a dark video frame composites to grey, and a band of grey
+          along an edge is a shadow by definition. The mask could not do that,
+          and it was measured not doing it — the rendered edge landed on
+          rgb(251,249,246), --color-paper exactly, with no grey anywhere in the
+          ramp. It was still wrong, so the mechanism was never the whole story.
 
-          IT STILL READ AS A SHADOW. So the objection is not to the mechanism and
-          never was: it is to the GRADIENT ITSELF. A soft ramp from dark footage
-          to light paper is a soft dark-to-light transition wherever it sits, and
-          on a page this bright that shape reads as a vignette however it is
-          produced. No implementation gets around that, because the thing being
-          objected to is the effect working.
+          WHAT WAS ACTUALLY WRONG WAS THE AXIS. The tilted plane is BUILT to run
+          out of its frame sideways — that is what the -13% overhang and the
+          4.5% inset are for, and it is why the far column is deliberately
+          sliced. Softening that edge argues the opposite of what the geometry
+          says: the wall stops looking like it continues past the frame and
+          starts looking like it evaporates at it. Vertically there is no such
+          intent. The lanes TRAVEL on that axis, so a clip entering or leaving
+          at a hard cut is the one edge where the loop announces itself, and it
+          is the edge the reference component softens too.
 
-          SO DO NOT REACH FOR A FADE HERE AGAIN. Not an overlay, not a mask, not
-          a smaller mask, not --fade-stops (which is still defined page-wide and
-          still correct for the bands that paint a real gradient on a flat
-          ground). If the crop ever needs softening the lever is the stage
-          geometry above — the -13%/4.5% inset and overhang pair, which decides
-          WHERE the cut lands rather than blurring it — or the wall's own height.
+          SO THE RULE IS: FADE WHERE THE MOTION IS, CROP WHERE THE GEOMETRY IS.
+          An attempt to bring the side pair back should expect to fail for the
+          third time, and the fix for a side edge that looks wrong is the
+          inset/overhang pair on the stage above — which decides WHERE the cut
+          lands — not a gradient and not a mask.
 
-          FOR THE RECORD, the mask that was removed, should the brief ever
-          change. It went on this component's outer box as an inline style, both
-          prefixed and unprefixed because Safari wants -webkit-mask-* and spells
-          `intersect` as `source-in`, and inline rather than in `className`
-          because Tailwind scans source TEXT and a comma-separated gradient list
-          in an arbitrary value never survives the scan:
+          BELOW `tab` NOTHING FADES, and that is not an oversight. Down there
+          the lanes are horizontal rows, so the travel axis has swapped: a
+          top/bottom mask would be eating the HEIGHT of a row it is not moving
+          through, which is the same mistake as masking the sides, rotated
+          ninety degrees. The phone wall keeps four clean edges.
 
-            --fade-x: clamp(40px, 7%, 130px);
-            --fade-y: clamp(32px, 6%, 96px);
-            mask-image:
-              linear-gradient(to right,  #0000 0, #000 var(--fade-x),
-                              #000 calc(100% - var(--fade-x)), #0000 100%),
-              linear-gradient(to bottom, #0000 0, #000 var(--fade-y),
-                              #000 calc(100% - var(--fade-y)), #0000 100%);
-            mask-composite: intersect;
-
-          It cost one extra composited layer (the box was already promoted by
-          the tilted plane, so it went from one surface to two) and it broke
-          nothing — hit testing, the hover scale, the per-lane hover stop and the
-          Lightbox all measured correct underneath it. It was removed because of
-          how it looked, not because of what it did. */}
+          --fade-stops in globals.css is untouched and still belongs to the
+          bands that paint a real gradient on a flat ground. It is the right
+          tool for those and the wrong one here. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on
