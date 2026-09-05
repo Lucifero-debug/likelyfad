@@ -91,10 +91,34 @@ const { testimonials } = content;
    at three across a 1180 wrap the cards would be ~360 wide and therefore ~640
    tall, and the section would run past two thousand pixels. Capping the track at
    300 and centring the row keeps a card ~533 tall at its largest, and the grid
-   still reflows on its own — three across a desktop, two on a tablet, one on a
-   phone, with no media query deciding it. */
+   still reflows on its own — two on a tablet, one on a phone, with no media
+   query deciding it. That reflow is the BASE rule and it now only governs below
+   `lap:`; from `lap:` up the count is declared.
+
+   FOUR IS DECLARED FROM `lap:`, AND auto-fit COULD NOT HAVE FOUND IT. auto-fit
+   picks its repeat count off the track's MAX where that max is a definite
+   length, so this one asks for 300px + a gap per column no matter how little
+   the cards would actually need. At the 980px viewport Chrome's desktop-site
+   mode renders, that is 882px of room buying exactly TWO columns — the same two
+   a 768px tablet gets, on a viewport a quarter wider, and eight cards stacked
+   four rows deep. Lowering the 300 to make auto-fit find four there would also
+   cap every real desktop at the same smaller card, which is the wrong trade in
+   the other direction.
+
+   `minmax(0,300px)` IS WHAT MAKES ONE DECLARED COUNT WORK ACROSS THE RANGE. The
+   floor is 0, not 240, so the four tracks share whatever the row has instead of
+   overflowing it: ~195px each at 980, ~203 at 1024, ~292 at 1440, and the full
+   300 from 1920 up, where `justify-center` centres the 1344px row in the wrap.
+   Eight items land as two rows of four at every width from `lap:` up — a 2560
+   display used to fit five and set them 5 + 3.
+
+   THE COST IS AT THE BOTTOM OF THE RANGE, and it is real: ~195px is well under
+   the 240 this component was drawn to, so between `lap:` and ~1100 the frame is
+   ~171x304 and the quote sits in a ~170px measure. If that reads too small, the
+   fix is a third step — three columns below ~1200 — not a lower ceiling. */
 const GRID =
-  "grid grid-cols-[repeat(auto-fit,minmax(240px,300px))] justify-center";
+  "grid grid-cols-[repeat(auto-fit,minmax(240px,300px))] justify-center " +
+  "lap:grid-cols-[repeat(4,minmax(0,300px))]";
 
 /* The card is the page's own card: white, hairline, small shadow, lifting on
    hover. The 12px of padding is what turns the video frame into an object

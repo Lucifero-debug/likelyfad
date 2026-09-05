@@ -148,7 +148,20 @@ export const content = {
      `label` sits where the reference block puts a duration badge. Durations are
      not in reels.generated.ts (the sync records id, src, hq and poster only), so
      rather than print a number nobody measured it names the format. If real
-     durations ever land in the reel data, this is the field they replace. */
+     durations ever land in the reel data, this is the field they replace.
+
+     IT HAS A WIDTH BUDGET, AND IT IS THE NARROWEST CARD THAT SETS IT. The pill
+     sits inside the 9:16 frame, and the grid runs four across from `lap:` up —
+     so at a 980px viewport (Chrome's desktop-site mode) the frame is 169px and
+     the pill has ~132px of room for uppercased mono at 0.06em tracking. That is
+     FIFTEEN CHARACTERS, measured: "Fragrance · UGC" is the longest label here
+     and the longest that holds one line. Over it the pill takes a second line
+     and sits on the clip as a two-line slab — "Apparel · Podcast-style" did
+     that, and so did "Hoodie · Podcast" at sixteen.
+
+     WHICH IS WHY TWO CARDS SHARE "Podcast-style". Category · format does not
+     fit for an apparel podcast cut, and of the two halves the format is the one
+     the frame cannot say for itself — the category is already in `who`. */
   testimonials: {
     kicker: "What clients say",
     heading: "Real reactions, as sent.",
@@ -183,7 +196,7 @@ export const content = {
         quote: "Ran it as-is. Cheapest CPA we've had this quarter.",
         who: "Growth lead, apparel brand · on a podcast-style cut",
         reel: "hoodie-ad-podcast-style",
-        label: "Apparel · Podcast-style",
+        label: "Podcast-style",
       },
       {
         quote: "My team argued about which parts were shot. None of it was.",
@@ -195,19 +208,19 @@ export const content = {
         quote: "Turnaround is the part I can't get anywhere else. Two days, done.",
         who: "Marketing manager, supplements brand · after the second batch",
         reel: "expert-doctor-review-ai-ugc",
-        label: "Health · Expert review",
+        label: "Health · Expert",
       },
       {
         quote: "Send four more in this format. Same energy.",
         who: "Founder, beauty brand · on a blind-test cut",
         reel: "perfume-blind-test-1",
-        label: "Beauty · Blind test",
+        label: "Beauty · Test",
       },
       {
         quote: "Our best-performing creative this month, and nobody in comments clocked it.",
         who: "Performance marketer, supplements brand",
         reel: "doctor-and-specialist-podcast-viral-ai-ugc",
-        label: "Health · Two-hander",
+        label: "Health · Panel",
       },
     ],
   },
