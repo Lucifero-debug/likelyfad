@@ -641,32 +641,6 @@ export function ReelWallV6({
          which is below the threshold where the eye reads "angled" at all. It
          was a very long lens on a very small subject. */
       className={`relative overflow-hidden tab:[perspective:900px] ${className}`}
-      /* THE EDGE FADES, AND THEY ARE A MASK RATHER THAN ANYTHING PAINTED — see
-         the long note above the Lightbox for why that distinction is the whole
-         fix. Inline rather than in `className` because Tailwind scans source
-         TEXT: an arbitrary value carrying a comma-separated gradient list does
-         not survive the scan, so a class built from this would silently never
-         be generated. Same reason --sets and --lane-secs are inline on the lane.
-
-         BOTH PREFIXED AND UNPREFIXED, AND THE COMPOSITE KEYWORDS DIFFER. Safari
-         still wants -webkit-mask-*, and its composite vocabulary is the old
-         Porter-Duff one where `source-in` means what the standard spells
-         `intersect`. They are not duplicates of each other and collapsing them
-         to one pair drops the fade on Safari or drops it everywhere else. */
-      style={
-        {
-          "--fade-x": "clamp(40px, 7%, 130px)",
-          "--fade-y": "clamp(32px, 6%, 96px)",
-          WebkitMaskImage:
-            "linear-gradient(to right, #0000 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), #0000 100%), " +
-            "linear-gradient(to bottom, #0000 0, #000 var(--fade-y), #000 calc(100% - var(--fade-y)), #0000 100%)",
-          maskImage:
-            "linear-gradient(to right, #0000 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), #0000 100%), " +
-            "linear-gradient(to bottom, #0000 0, #000 var(--fade-y), #000 calc(100% - var(--fade-y)), #0000 100%)",
-          WebkitMaskComposite: "source-in",
-          maskComposite: "intersect",
-        } as CSSProperties
-      }
     >
       {/* The columns are one object; the split between copy and wall is the real
           division on the page. Hence 16 here against the 48/64 the hero uses. */}
@@ -904,85 +878,68 @@ export function ReelWallV6({
         })}
       </div>
 
-      {/* THE FADES ARE BACK ON ALL FOUR EDGES, AS A MASK ON THE BOX. The mask
-          itself is on the outer div at the top of this return; this is the note
-          that explains why it is written the way it is, and why the last two
-          attempts at the same effect were deleted.
+      {/* NO EDGE FADES ON ANY SIDE, AT ANY WIDTH, AND THIS IS THE THIRD TIME.
+          Every edge of this wall is a clean cut, on the phone and on the
+          desktop. Read the whole of this before adding a fourth attempt.
 
-          WHAT WAS HERE BEFORE, AND WHY IT WENT. Two pairs of absolutely
-          positioned gradient divs — a 64px paper ramp at the top and bottom
-          from `tab` up, and a 3%/6% pair down the left and right — on the sound
-          reasoning that a lane sliced by the crop reads as a bug where a faded
-          one reads as the wall continuing past the frame. The reasoning was
-          right and the mechanism was wrong. They read as a SHADOW across the
-          top, the bottom and both sides of the section, and both pairs were
-          removed for it.
+          WHAT HAS BEEN TRIED, IN ORDER:
 
-          AN OVERLAY ADDS COLOUR. A MASK SUBTRACTS THE WALL. That sentence is
-          the entire fix. Those divs painted paper-coloured pixels ON TOP of the
-          clips, so at the midpoint of the ramp the compositor was mixing 50%
-          paper with a dark video frame — and paper over dark is grey. Grey
-          sitting in a band along an edge is a shadow; there is no way to tune a
-          painted scrim out of that, because the greyness IS the ramp doing its
-          job. A mask never introduces a colour at all. It removes alpha from
-          the wall's own pixels, so the clips dissolve to genuinely nothing and
-          the page shows through them unmixed. On paper the fade now reads as
-          paper, and it would read as correct on any ground the section is ever
-          given, which a paper-keyed gradient could not.
+            1. TOP AND BOTTOM OVERLAYS. A 64px paper ramp at each end from `tab`
+               up, as absolutely positioned gradient divs. Removed: read as a
+               shadow across the top and bottom of the section.
+            2. LEFT AND RIGHT OVERLAYS. A 3% ramp left, 6% right, same
+               mechanism, softening the edges the tilted plane is cropped by.
+               Removed for the same objection, down both sides.
+            3. A MASK ON THE BOX, all four edges at once. Removed for the same
+               objection again, which is the finding this note exists to carry.
 
-          IT IS ALSO WHAT THE REFERENCE ACTUALLY DOES. The Framer component this
-          wall is being matched to exposes Fade Size, Fade Intensity and
-          Background Colour as three separate controls; the third is the tell
-          that it composites against a ground it owns. This wall does not own its
-          ground — it sits on the page's paper with the hero copy beside it and a
-          caption under it — so the equivalent has to be subtractive rather than
-          composited against a colour.
+          THE THIRD ATTEMPT IS THE INFORMATIVE ONE, because it rules out the
+          explanation the first two left standing. The overlays were assumed to
+          have failed because they PAINTED: a paper-coloured scrim at 50% over a
+          dark video frame composites to grey, and a band of grey along an edge
+          is a shadow by definition. A mask cannot do that — it subtracts alpha
+          from the wall's own pixels rather than adding a colour over them, so
+          the page shows through unmixed. That was measured rather than assumed:
+          sampling the rendered page put the left edge, the right edge and 60px
+          into the ramp at rgb(251,249,246), which is --color-paper exactly, and
+          the top and bottom within about 2% of it while keeping paper's own warm
+          R > G > B ordering. There was no grey anywhere in the fade.
 
-          --fade-x AND --fade-y ARE THE SIZE DIAL, which is the reference's Fade
-          Size. They are clamps rather than constants so the ramp stays
-          proportionate: a 7% inset is a soft suggestion on a 1920 wall and would
-          swallow a phone row whole, hence the 40px floor and the 130px ceiling,
-          and the vertical pair is smaller because the wall is shorter than it is
-          wide. Raise them for more dissolve, lower them for more wall.
+          IT STILL READ AS A SHADOW. So the objection is not to the mechanism and
+          never was: it is to the GRADIENT ITSELF. A soft ramp from dark footage
+          to light paper is a soft dark-to-light transition wherever it sits, and
+          on a page this bright that shape reads as a vignette however it is
+          produced. No implementation gets around that, because the thing being
+          objected to is the effect working.
 
-          FADE INTENSITY IS THE END STOP, NOT A SECOND VARIABLE. Both gradients
-          run to `#0000`, which clears the edge completely. Changing that end
-          stop to something like `rgb(0 0 0 / 0.25)` leaves a quarter of the wall
-          standing at the extreme edge — the reference's Fade Intensity, spelled
-          as the thing it actually is. Do that in all four places or the edges
-          stop matching each other.
+          SO DO NOT REACH FOR A FADE HERE AGAIN. Not an overlay, not a mask, not
+          a smaller mask, not --fade-stops (which is still defined page-wide and
+          still correct for the bands that paint a real gradient on a flat
+          ground). If the crop ever needs softening the lever is the stage
+          geometry above — the -13%/4.5% inset and overhang pair, which decides
+          WHERE the cut lands rather than blurring it — or the wall's own height.
 
-          TWO GRADIENTS COMPOSITED, BECAUSE ONE CANNOT DO FOUR EDGES. A single
-          linear-gradient runs on one axis. The horizontal pair and the vertical
-          pair are intersected, so a pixel survives only where BOTH say it
-          should — which is what rounds the corners of the fade instead of
-          leaving the two ramps fighting over them.
+          FOR THE RECORD, the mask that was removed, should the brief ever
+          change. It went on this component's outer box as an inline style, both
+          prefixed and unprefixed because Safari wants -webkit-mask-* and spells
+          `intersect` as `source-in`, and inline rather than in `className`
+          because Tailwind scans source TEXT and a comma-separated gradient list
+          in an arbitrary value never survives the scan:
 
-          IF preserve-3d EVER COMES BACK TO THE STAGE, THIS MASK KILLS IT
-          SILENTLY. The note at the head of this file records that per-column
-          depth wants `transform-style: preserve-3d` on the grid, and that the
-          grid carries one flat 3D transform instead. A mask on an ancestor
-          forces that subtree to be rendered into a single group before it is
-          composited — which flattens it. So the depth ramp would not error, it
-          would just quietly stop existing, exactly the failure mode the head of
-          this file warns about for `overflow` doing the same thing. Anyone
-          reintroducing preserve-3d has to move this mask down onto the cells or
-          give up one of the two.
+            --fade-x: clamp(40px, 7%, 130px);
+            --fade-y: clamp(32px, 6%, 96px);
+            mask-image:
+              linear-gradient(to right,  #0000 0, #000 var(--fade-x),
+                              #000 calc(100% - var(--fade-x)), #0000 100%),
+              linear-gradient(to bottom, #0000 0, #000 var(--fade-y),
+                              #000 calc(100% - var(--fade-y)), #0000 100%);
+            mask-composite: intersect;
 
-          THE INSET/OVERHANG PAIR WAS TUNED AGAINST A HARD CROP AND MAY WANT
-          REVISITING. -13% on the left and 4.5% on the right exist because a
-          plane turned -22 degrees over-reaches the frame on its near side and
-          falls short on its far one, and both numbers were solved for edges
-          that were being sliced SHARPLY — the goal was for the crop to land in a
-          place that did not look like a mistake. The crop is soft now, which
-          changes what those numbers are optimising for: an edge that dissolves
-          can afford to be cropped somewhere a hard edge could not, and the
-          overhang may now be buying margin nobody can see. Re-solving them is a
-          separate job from this one and has not been done.
-
-          --fade-stops in globals.css is untouched and still belongs to the bands
-          that paint a real gradient. It is the right tool for those and the
-          wrong one here, which is the whole point of this note. */}
+          It cost one extra composited layer (the box was already promoted by
+          the tilted plane, so it went from one surface to two) and it broke
+          nothing — hit testing, the hover scale, the per-lane hover stop and the
+          Lightbox all measured correct underneath it. It was removed because of
+          how it looked, not because of what it did. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on
