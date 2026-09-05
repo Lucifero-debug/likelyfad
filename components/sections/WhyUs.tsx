@@ -73,8 +73,38 @@ const CARD_TITLE = "text-[clamp(1.125rem,1.05rem+0.31vw,1.25rem)]";
 /* Two corner washes on warm paper rather than a flat tint: the flame stop
    enters top-left, the violet stop leaves bottom-right, so the band carries the
    gradient's direction without competing with the type sitting on it. */
+/* THE CLAIM CARD'S GROUND — /bg.png, with the two brand tints washed over it.
+
+   IT WAS RENDERING NO BACKGROUND AT ALL BEFORE THIS, and that is worth knowing
+   because the bug is invisible and the shape that caused it is easy to write
+   again. The old value was one `bg-[...]` holding three comma-separated layers,
+   and the last of them was `var(--color-paper-2)` — a plain colour, #fff7f3. A
+   colour is not a valid <bg-image>, and ONE invalid layer in a comma list
+   invalidates the WHOLE declaration rather than just its own layer. Chrome
+   reported `background-image: none` and `background-color: rgba(0,0,0,0)` on
+   this element: the two tint radials had never painted either. So the colour is
+   now a background-COLOR utility of its own, and only real image layers go in
+   the image list.
+
+   ORDER IS TOP-DOWN. The first layer paints nearest the viewer, so the two
+   radials sit OVER the photograph and the photograph sits over the base colour.
+   That keeps the original warm/cool corner wash doing its job — at 10% alpha it
+   now reads as a glow on the texture rather than a tint on paper.
+
+   THE BASE COLOUR IS noir AND IT IS LOAD BEARING. /bg.png carries an alpha
+   channel and roughly a third of its canvas is transparent, so whatever sits
+   under it shows through. Against the old paper-2 the card would have come out
+   patchy — dark texture over most of it, near-white where the image runs out.
+   noir (#141217) is within a couple of steps of the image's own darkest area,
+   so the transparent region reads as more of the same ground instead of a hole.
+
+   cover/center/no-repeat RATHER THAN THE NATURAL SIZE. The source is 3581x2417
+   against a card that is wide and short, so at natural size it would tile and
+   show its seams. `cover` crops to the middle band, which on this image is the
+   part with the texture in it. */
 const CLAIM_BG =
-  "bg-[radial-gradient(90%_130%_at_10%_0%,rgba(255,106,61,0.1),rgba(255,106,61,0)_55%),radial-gradient(90%_130%_at_95%_100%,rgba(138,79,224,0.1),rgba(138,79,224,0)_55%),var(--color-paper-2)]";
+  "bg-noir bg-cover bg-center bg-no-repeat " +
+  "bg-[image:radial-gradient(90%_130%_at_10%_0%,rgba(255,106,61,0.1),rgba(255,106,61,0)_55%),radial-gradient(90%_130%_at_95%_100%,rgba(138,79,224,0.1),rgba(138,79,224,0)_55%),url('/bg.png')]";
 
 export function WhyUs() {
   return (
@@ -185,8 +215,24 @@ export function WhyUs() {
             Tailwind scans source TEXT and never sees a class assembled from a
             variable, which is why the clamp is written out rather than derived
             from CARD_GAP — the note at the foot of lib/ui.ts. */}
+        {/* THE FOREGROUND FLIPPED WITH THE GROUND, AND IT HAD TO. /bg.png is a
+            near-black texture, and everything in this box was drawn for the
+            near-white one it replaced: the statement inherited `text-ink`
+            (#16141a) from the body, the CTA was `variant="dark"` (ink pill,
+            paper text) and the hairline was `border-line`, ink at 10% alpha.
+            All three are near-black on near-black. Left alone the card would
+            have rendered as a dark rectangle with an invisible sentence and an
+            invisible button in it.
+
+            `text-paper` here rather than on the statement itself so the whole
+            box inherits it — the CTA's own variant sets its colour, so nothing
+            is fighting over it, and anything added to this card later starts
+            legible instead of starting invisible.
+
+            `border-white/10` is `border-line` mirrored: the same 10% hairline,
+            measured from the other end of the scale. */}
         <div
-          className={`mt-[clamp(32px,3.5vw,48px)] flex flex-col items-center gap-6 rounded-3xl border border-line p-[clamp(32px,3.5vw,48px)] text-center ${CLAIM_BG}`}
+          className={`mt-[clamp(32px,3.5vw,48px)] flex flex-col items-center gap-6 rounded-3xl border border-white/10 p-[clamp(32px,3.5vw,48px)] text-center text-paper ${CLAIM_BG}`}
         >
           {/* A DIRECT flex child, deliberately: `display: inline` on a flex item
               blockifies, which is what lets the 26ch measure apply. Wrap it in a
@@ -203,7 +249,11 @@ export function WhyUs() {
             className={`max-w-[26ch] text-pretty font-sans ${TEXT_STATEMENT} font-bold leading-[1.2] lap:leading-[1.1] tracking-[-0.022em]`}
           />
           <Reveal delay={100}>
-            <Button contact variant="dark" withArrow>
+            {/* `grad` rather than `dark`, which is now an ink pill on an ink
+                ground. It is also the same variant the hero gives this exact
+                action — both are `contact`, both open the DM — so the page's
+                primary CTA looks the same in both places it appears. */}
+            <Button contact variant="grad" withArrow>
               {why.claimCta}
             </Button>
           </Reveal>
