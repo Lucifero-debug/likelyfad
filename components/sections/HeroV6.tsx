@@ -287,8 +287,31 @@ export function HeroV6({
          rung down and the first row of clips runs underneath live nav links on
          a bare paper ground, with nothing behind them to separate the two. The
          top of this section is spent, and the seam under it is where the air
-         actually was. */
-      className="relative flex min-h-[min(100svh,1080px)] items-center bg-paper pt-[96px] pb-[48px]"
+         actually was.
+
+         THE THIRD TERM AT `lap:` IS WALL_HEIGHT'S 55vw CAP, RUN BACKWARDS, and
+         it is what stops the row floating on a NARROW-BUT-TALL viewport. The
+         ceiling above answers to the viewport; the wall answers to 55vw as
+         well, and between `lap:` (961px) and ~1400px those two stop agreeing:
+         the wall shrinks with the width while the band still claims its 1080,
+         and `items-center` splits the difference into paper above and below.
+         Measured, that was 264px above and 216px below on an iPad Pro held
+         portrait (1024x1366) and 276/228 in Chrome's desktop-site mode
+         (980x2125) — against the 101/53 the same page gets at 1920 and above.
+
+         55vw + 96 + 48 + 48 is WALL_HEIGHT's `100svh - 96 - 48 - 48` solved for
+         the height that clause wants, so the band asks for exactly what the
+         wall, its caption and the two paddings need and nothing beyond it. It
+         is INERT WHERE THE WALL IS NOT 55vw-BOUND: past ~1600px wide the 1080
+         is the smaller term and every desktop width is untouched. The residual
+         slack is ~10px at every width now, which is what 1920 always had.
+
+         IT IS THE SAME MEASUREMENT AS WALL_HEIGHT, WRITTEN BACKWARDS — the two
+         96/48/48 triples move together or the air comes back. Scoped to `lap:`
+         because the 55vw cap is: below it the wall is `clamp(320px,48svh,448px)`
+         and the copy stacks over it, so the content already outgrows any floor
+         this would set and the base rule is the one that reads. */
+      className="relative flex min-h-[min(100svh,1080px)] items-center bg-paper pt-[96px] pb-[48px] lap:min-h-[min(100svh,1080px,55vw_+_96px_+_48px_+_48px)]"
     >
       {/* 40/60 on a laptop, stacked below it. The copy is FIRST in source, so
           the stacked order is copy then wall with nothing to declare. */}
