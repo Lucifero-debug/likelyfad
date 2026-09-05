@@ -159,9 +159,9 @@ export default function Home() {
         {/* WHY US, PRICING, FAQ AND THE FOOTER ARE ALL PARKED — every version of
             each, V1 included. Uncomment a band to bring it back. */}
         <WhyUs /> 
-        {/* <WhyUsV2 /> <WhyUsV3 />  */}
-        {/* <WhyUsV4 />  */}
-        {/* <WhyUsV5 /> */}
+         {/* <WhyUsV2 /> <WhyUsV3 />  */}
+         {/* <WhyUsV4 />   */}
+         {/* <WhyUsV5 />  */}
 
         <Work />
 

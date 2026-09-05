@@ -70,6 +70,48 @@ const PILLAR =
    title this small still hold its own in the band. */
 const CARD_TITLE = "text-[clamp(1.125rem,1.05rem+0.31vw,1.25rem)]";
 
+/* THE NUMERAL CHIP, LIFTED FROM V2 AND SCALED UP.
+
+   V2 sets its index in a 24px circle filled `bg-ink/4` with the numeral in
+   pink-deep mono. That is the treatment; the only change here is the size.
+
+   WHY IT IS A CIRCLE AGAIN AND STILL NOT THE OLD BALL. The disc this card used
+   to carry was 36px of `--grad` at full saturation with a white numeral on top,
+   which made it the loudest object in a white card — a decorative index
+   outranking the claim it introduces. V2 keeps the round shape and inverts the
+   emphasis: the fill drops to a 4% ink wash that barely separates from the card,
+   and the COLOUR moves onto the digits. Same silhouette, opposite weight.
+
+   36px, NOT V2's 24. V2's cards are small, flush-left and set at body size,
+   where 24 is in proportion. These are centred, padded to 24 and titled in
+   extrabold display, and at 24 the chip read as a leftover under that.
+
+   36 IS THE DISC'S OWN FOOTPRINT, WHICH IS THE POINT AND NOT A COINCIDENCE. The
+   card was drawn around a 36px mark, so the gap ladder under it and the balance
+   between the mark and the title were both set against that size. Taking V2's
+   treatment back up to it means the card gets its original proportions with the
+   original's weight problem inverted: same 36px circle, 4% wash instead of full
+   saturation, pink digits instead of white on a gradient. Shape and scale from
+   the disc, emphasis from V2.
+
+   The numeral rides up with the circle, 0.62rem → 0.78rem, so the digits keep
+   their proportion inside it rather than swimming in the middle.
+
+   ZERO-PADDED AND MONO, WHICH IS V2's REASON AND IT HOLDS AT ANY SIZE: `01`
+   through `06` are a fixed two characters at a fixed advance, so all six chips
+   hold their numeral on the same optical centre and the six line up down the
+   grid. A bare `1` beside a `6` in a proportional face would not.
+
+   STILL `aria-hidden`, as the disc was. Read aloud, "one, It looks real, or it
+   doesn't ship" prefixes every pillar with a number that says nothing the
+   reading order has not already said. The numbering is for the eye, to make six
+   cards read as one enumerated set; it is not content.
+
+   THE GAP LADDER BELOW IT IS UNTOUCHED — 16 to the title, 8 to the body. */
+const NUMERAL =
+  "grid size-9 shrink-0 place-items-center rounded-full bg-ink/4 " +
+  "font-mono text-[0.78rem] leading-none tabular-nums text-pink-deep";
+
 /* Two corner washes on warm paper rather than a flat tint: the flame stop
    enters top-left, the violet stop leaves bottom-right, so the band carries the
    gradient's direction without competing with the type sitting on it. */
@@ -168,21 +210,9 @@ export function WhyUs() {
                It resets every three so no card waits more than 140ms. */
             <Reveal key={p.title} delay={(i % 3) * 70} className="h-full">
               <article className={PILLAR}>
-                {/* 36px gradient disc, white 14px mono numeral — the only
-                    saturated thing in the card, and the first thing the eye
-                    lands on, which is what makes the six read as a numbered
-                    set rather than six loose boxes.
-
-                    Hidden from a screen reader, loud to the eye. The numeral
-                    carries none of the card's meaning: read aloud, "one, It
-                    looks real, or it doesn't ship" only prefixes every pillar
-                    with a number that says nothing the order has not already
-                    said. */}
-                <span
-                  aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-full bg-[image:var(--grad)] font-mono text-sm font-medium leading-6 text-white"
-                >
-                  {i + 1}
+                {/* The 36px numeral chip — see NUMERAL. */}
+                <span aria-hidden className={NUMERAL}>
+                  {String(i + 1).padStart(2, "0")}
                 </span>
 
                 {/* THE LADDER OF SHRINKING GAPS — 16 here, 8 below, not one gap
