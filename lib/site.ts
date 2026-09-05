@@ -18,3 +18,17 @@ export const X_HANDLE = "amanxdesign";
 export function contactUrl(): string {
   return `https://x.com/${X_HANDLE}`;
 }
+
+/* WHERE EVERY CLIP AND EVERY POSTER ACTUALLY COMES FROM. The reel manifest
+   holds absolute blob-store URLs (public/videos is a gitignored local cache and
+   is never deployed), so the first tile on the page is a THIRD-PARTY origin —
+   a fresh DNS lookup, TCP handshake and TLS negotiation before a single byte of
+   the first poster, all of it after the document has already been parsed.
+
+   Named here so app/layout.tsx can warm it in the head. If a sync ever moves
+   the library to a different store, this is the one line that has to follow it —
+   a stale value costs nothing but a wasted handshake to a host nobody uses.
+
+   It is the ORIGIN only, deliberately: preconnect keys on origin, and pointing
+   it at a path warms nothing extra. */
+export const MEDIA_ORIGIN = "https://1ra8g19xgmgmqzap.public.blob.vercel-storage.com";

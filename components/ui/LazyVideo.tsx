@@ -40,6 +40,25 @@ import { useInViewPlay, type PlayPolicy } from "@/lib/useInViewPlay";
      200px: the bytes are on their way by the time a tile is eligible to start,
      so play() is a resume rather than a cold fetch.
 
+   AND THE LEAD ONLY EXISTS IF THE PRELOAD IS PROMOTED WITH THE SOURCE. This
+   was the hole. `preload="none"` is not "fetch lazily", it is "fetch NOTHING
+   until something calls play()", and it is an attribute the element keeps for
+   life. Setting `src` under it therefore moved no bytes at all: the 200px lead
+   named a file and then sat on it, and every tile still opened its connection
+   cold at the instant it was allowed to start — DNS was warm by then but the
+   request, the container parse and the first media chunk were all still ahead
+   of the first frame. The tile held its poster across the whole of that, which
+   is the beat of dead poster you see as a clip enters a lane.
+
+   So the attach step now promotes the element to LEAD_PRELOAD in the same
+   breath as the source. It is deliberately "metadata" rather than "auto": the
+   expensive half of a cold start is the connection and the moov, and metadata
+   buys both without committing to the whole file for tiles the lane budget may
+   never give a slot to. It is also why the promotion lives HERE and not in the
+   JSX — a preload on the element at first paint is a request during load for
+   every tile on the page, which is the policy this component was written to
+   replace. Gated behind attach it is only ever the near-viewport handful.
+
    THE ATTACH OBSERVER IS SHARED, for the same reason the registry's is. One
    observer watching N targets is one callback; N observers watching one target
    each is N callbacks, all of them firing inside a continuously animating
@@ -50,6 +69,11 @@ import { useInViewPlay, type PlayPolicy } from "@/lib/useInViewPlay";
    a tile is never waiting on the network at the moment it is allowed to start,
    and comfortably short of "everything below the fold". */
 const ATTACH_MARGIN = "200px";
+
+/* What an attached tile is promoted to. See the note above for why this is not
+   "auto": one is a warm connection and a parsed container, the other is the
+   whole clip for a tile that may never be given a slot. */
+const LEAD_PRELOAD = "metadata";
 
 /* The source each observed element is waiting for. A WeakMap rather than a data
    attribute: the URL never belongs in the DOM, and an entry here cannot outlive
@@ -72,7 +96,14 @@ function attachObserver(): IntersectionObserver {
            drop whatever it had buffered. */
         attachIO?.unobserve(el);
         pendingSrc.delete(el);
-        if (src && el.getAttribute("src") !== src) el.setAttribute("src", src);
+        if (src && el.getAttribute("src") !== src) {
+          /* PRELOAD FIRST, THEN THE SOURCE. Both orders work, but setting the
+             source under preload="none" and promoting after means the element
+             performs its load algorithm twice; promoting first means the one
+             load it runs is already the one that fetches. */
+          if (el.preload === "none") el.preload = LEAD_PRELOAD;
+          el.setAttribute("src", src);
+        }
       }
     },
     { rootMargin: ATTACH_MARGIN }
@@ -211,6 +242,11 @@ export function LazyVideo({
         muted
         loop
         playsInline
+        /* "none" AT FIRST PAINT IS THE POINT — a tile below the fold has
+           never named a file and never asked for a byte. The attach observer
+           promotes it to LEAD_PRELOAD when it comes near, so this value is the
+           starting policy rather than the standing one. `immediate` callers
+           pass "auto" and are never observed, so nothing promotes them. */
         preload={preload}
         /* The wrapping button is the control; the video inside it is never a
            tab stop of its own and carries no label, or a screen reader would

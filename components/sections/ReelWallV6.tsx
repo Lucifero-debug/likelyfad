@@ -124,10 +124,16 @@ const COLUMNS = 4;
    under the threshold where the eye tracks it as travel rather than as the wall
    being alive. Column 4 lands near 21px/s, which is still calm.
 
-   THIS IS THE ONE NUMBER THAT NOW SETS HOW MUCH THE WALL MOVES. With the
-   parallax carrying the fast half of it, these could stay slow; if the wall
-   reads static since the change, this is the dial — not the ratio above, which
-   would pull the columns apart rather than speed them up together. */
+   IT IS NO LONGER THE DIAL, AND IT IS WORTH SAYING SO HERE RATHER THAN LEAVING
+   THE NEXT READER TO FIND OUT. This is the REFERENCE the two layouts scale
+   from; what actually sets how much the wall moves is --lane-speed on the lane,
+   which is a divisor per breakpoint. Changing this number changes BOTH layouts
+   at once and silently rescales the phone against a value that was chosen by
+   eye — so the speed edits go there, and this stays put. What it is still good
+   for is moving the whole wall, both layouts together, in one place.
+
+   The ratio above is still not the dial either: it would pull the columns apart
+   rather than speed them up together. */
 const AMBIENT_BASE_SECONDS = 180;
 
 const AMBIENT_SECONDS: number[] = Array.from(
@@ -155,10 +161,25 @@ const AMBIENT_DURATION: string[] = AMBIENT_SECONDS.map((n) => `${n}s`);
    length. Nothing was tuned for that; it fell out of one constant serving two
    layouts, and on a phone the wall sits close to the edge of reading as still.
 
-   6.4 IS PAST PARITY, DELIBERATELY, AND PARITY IS 3.2. Matching the desktop
-   wall in px/s would put the rows at 7.8-17; 6.4 puts them at 15.6, 23.4 and
-   35 px/s, so the phone wall is the FASTEST version of itself on the site —
-   above the 26 px/s the desktop's quickest column runs at, not below it.
+   BOTH LAYOUTS DECLARE A DIVISOR NOW, AND NEITHER FALLS BACK. `tab:` and
+   `max-tab:` partition every width between them, so the `, 1)` fallback on the
+   lane is unreachable and the two numbers never race: they are in different
+   media queries rather than relying on which Tailwind emits last, which is the
+   thing that decides an equal-specificity fight and is not worth resting on.
+   The consequence that matters is that the two are INDEPENDENT — changing the
+   desktop speed cannot move the phone, and that is the whole reason the speeds
+   live here instead of in AMBIENT_BASE_SECONDS.
+
+   DESKTOP 1.3, WHICH IS A NUDGE AND NOT A REGRADE. It takes the four columns
+   from 7.7 / 11.6 / 17.4 / 26.1 px/s to 10.0 / 15.1 / 22.6 / 33.9. The slowest
+   lane is the one that had to move: at 7.7 px/s it was under the rate at which
+   the eye reads a thing as travelling at all, so column 1 was carrying the
+   wall's depth without visibly contributing to its motion. 10 clears that.
+
+   PHONE 6.4 IS PAST PARITY, DELIBERATELY, AND PARITY IS 3.2. Matching the
+   desktop wall in px/s would put the rows at 7.8-17; 6.4 puts them at 15.6,
+   23.4 and 35 px/s, so the phone wall is the FASTEST version of itself on the
+   site — above even the desktop's quickest column, not below it.
 
    THAT IS A CHOICE ABOUT WHAT THE WALL IS ON A PHONE RATHER THAN A CONVERSION.
    On a laptop it sits beside the copy and is read past; on a phone it is the
@@ -754,11 +775,12 @@ export function ReelWallV6({
                    frame it is composited. Four lanes sliding under an overlay
                    nobody can see through were being paid for and seen by
                    no one. The same stop is in Work, which has three. */
-                /* max-tab: is BELOW the breakpoint, the one direction the rest
-                   of this file never needs — every other rule here is `tab:` and
-                   up. It is the phone layout that runs short sets, so it is the
-                   phone layout that has to divide. See AMBIENT_SECONDS. */
-                className={`flex w-max animate-wall6-lane-x max-tab:[--lane-speed:6.4] [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col ${
+                /* THE TWO SPEEDS, ONE PER LAYOUT. max-tab: is BELOW the
+                   breakpoint, the one direction the rest of this file never
+                   needs — every other rule here is `tab:` and up. Together they
+                   cover every width, so the lane always has a divisor and never
+                   takes its fallback. See AMBIENT_SECONDS for both numbers. */
+                className={`flex w-max animate-wall6-lane-x tab:[--lane-speed:1.3] max-tab:[--lane-speed:6.4] [&:has(button:hover)]:[animation-play-state:paused] [[data-off]_&]:[animation-play-state:paused] tab:w-auto tab:animate-wall6-lane tab:flex-col ${
                   active ? "[animation-play-state:paused]" : ""
                 }`}
               >
