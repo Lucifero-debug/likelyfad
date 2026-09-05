@@ -65,6 +65,21 @@ type ButtonBase = {
   className?: string;
   withArrow?: boolean;
   ariaLabel?: string;
+  /** Opens in a new tab, with the rel that has to go with it.
+
+      IT EXISTS BECAUSE `target="_blank"` USED TO BE WELDED TO `contact`, and
+      that was fine for exactly as long as the X profile was the only outbound
+      link on the page. The work wall's Drive library is the second, and
+      spelling its target inline at the call site would have meant spelling the
+      rel there too — which is the half everyone forgets. A page opened with
+      `_blank` and no `noopener` can reach back through `window.opener` and
+      navigate the tab it came from, so the two belong together in one place
+      rather than in one place and one caller.
+
+      An in-page anchor or a same-site route should leave this alone: opening a
+      new tab for a destination on this site takes the back button away from
+      the visitor for nothing. */
+  external?: boolean;
 };
 
 /* href used to default to "#" in v1, which meant a Button with no destination
@@ -84,17 +99,21 @@ export function Button({
   className = "",
   withArrow = false,
   contact = false,
+  external = false,
   ariaLabel,
 }: ButtonProps) {
   // The union guarantees href is present whenever contact is not set.
   const finalHref = contact ? contactUrl() : (href as string);
+  /* The DM CTA is external by definition, so it never has to ask for the flag.
+     Anything else says so for itself. */
+  const newTab = contact || external;
 
   return (
     <a
       href={finalHref}
       className={`${BASE} ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
-      target={contact ? "_blank" : undefined}
-      rel={contact ? "noopener noreferrer" : undefined}
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
       aria-label={ariaLabel ?? (contact ? "Send us a DM on X" : undefined)}
     >
       <span>{children}</span>

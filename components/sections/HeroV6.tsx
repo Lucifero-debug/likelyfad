@@ -84,7 +84,8 @@ function useHeroFade() {
 const OPTICAL = "lap:ml-[-0.04em] lap:indent-[0.04em]";
 
 /* The two ends of the gap scale, and the rule behind them: the four columns of
-   the wall are ONE object, so the space between them (16, in ReelWallV6) has to
+   the wall are ONE object, so the space between them (clamp(8px,1.2vw,12px),
+   in ReelWallV6, which is the work wall's track gap) has to
    be clearly smaller than the space between the copy and the wall, which is the
    real division on the page.
 
@@ -161,15 +162,30 @@ const STAGE = "mx-auto w-full max-w-[clamp(1520px,79.167vw,1920px)] px-[clamp(24
    growing at, and neither one ends up with slack the other has to absorb. The
    two numbers move together or not at all.
 
-   55vw IS NOT A DESIGN CEILING, IT IS THE SEAMLESSNESS INVARIANT. ReelWallV6
-   needs `oneSetHeight >= containerHeight` or the loop visibly hitches once a
-   cycle, and a set is four clips tall — so it scales with the wall's WIDTH
-   while the two terms above scale with its HEIGHT. A narrow window on a tall
-   monitor is where those come apart: at 961x1440 the height terms want 888 and
-   one set is only ~805, so the loop would break. Keyed to width the cap lands
-   at 529 there and it holds. Margin runs 22-49% across the range — 961:529 vs
-   805, 1200:660 vs 1034, 1440:792 vs 1282, and from ~1615 up the 888 takes over
-   against a set that is never below 1367.
+   55vw WAS THE SEAMLESSNESS INVARIANT AND IS NOW SLACK, WHICH IS WORTH SAYING
+   PLAINLY RATHER THAN LEAVING THE OLD CLAIM STANDING. ReelWallV6 needs
+   `(sets - 1) x oneSetHeight >= containerHeight` or the loop visibly hitches
+   once a cycle, and a set is four clips tall — so it scales with the wall's
+   WIDTH while the two terms above scale with its HEIGHT. A narrow window on a
+   tall monitor is where those come apart, which is why the cap is keyed to
+   width at all.
+
+   TWO CORRECTIONS TO WHAT THIS NOTE USED TO SAY, both found by measuring the
+   running page rather than by arithmetic. First, the container the set is
+   checked against is NOT this height: the wall's cells are `-inset-y-[20%]`, so
+   the box a lane is clipped by is 1.4x it — 529 becomes 740, 888 becomes 1243.
+   Every margin quoted here before was flattering by that factor. Second, the
+   clips are the work wall's size now (see the note on the clamp in ReelWallV6),
+   so a set caps at 1172 rather than 1367, and at 1920 and up that pair — 1172
+   against 1243 — was the wrong way round. It is COLUMN_SETS at 3, not this cap,
+   that carries the invariant today.
+
+   MEASURED AT TWELVE VIEWPORTS AFTER THAT CHANGE, `(sets-1) x set` vs container:
+   961x900 1742/740, 961x1440 1742/740, 1200 2144/924, 1440 2344/991, 1920 2344/
+   1243, 2560 2344/1243. The tightest is 89% of margin, where it used to be a few
+   per cent, so this cap is no longer what is holding the loop together — it is a
+   design ceiling again, and the 55vw is what keeps a wide short window from
+   giving the wall more height than the hero copy beside it.
 
    THERE USED TO BE A FOURTH TERM, 1400px, guarding the case 55vw cannot: STAGE
    stops at 1920, so past a ~2425 viewport the set stops growing at ~1776 while
@@ -197,14 +213,20 @@ const WALL_HEIGHT =
    leaves a sliver of paper at each edge or pushes the wall past the viewport
    and gives the page a horizontal scrollbar. Change STAGE and change this.
 
-   IT IS NOT A FREE 48px, AND THE CLIP CLAMP PAID FOR IT. Below `tab` the lanes
-   run sideways and ReelWallV6's invariant is `oneSetWidth >= the wall's own
-   width` — so widening the wall to the full viewport tightened the very margin
-   that keeps the loop seamless. At the old 22vw a set stopped outrunning the
-   viewport at ~533px wide, which is inside the range this layout covers. The
-   clamp in ReelWallV6's Clip went to 24vw to buy it back; the arithmetic is in
-   the note there. Widen the bleed further, or narrow that clamp, and the wrap
-   point comes on screen.
+   IT IS NOT A FREE 48px, AND THE COPY COUNT PAYS FOR IT NOW. Below `tab` the
+   lanes run sideways and ReelWallV6's invariant is
+   `(sets - 1) x oneSetWidth >= the wall's own width` — so widening the wall to
+   the full viewport tightened the very margin that keeps the loop seamless.
+   Four clips at the work wall's row size come to ~620px, which stops outrunning
+   a full-bleed viewport at ~615px wide; the band from there to `tab` is inside
+   the range this layout covers, and it is one of the two bands that took
+   COLUMN_SETS from 2 to 3. Measured at 760, the worst width in the band, a lane
+   now carries 1240 against a 760 container.
+
+   SO THE ORDER OF OPERATIONS HAS CHANGED. It used to be the clip clamp that
+   absorbed a wider bleed; the clamp is the work wall's now and is not free to
+   move, so widening the bleed further spends copies instead — four more <video>
+   per lane. Check the numbers in ReelWallV6's COLUMN_SETS note before doing it.
 
    `mx` RATHER THAN A NEGATIVE INSET OR A width: 100vw. The wall is a block in a
    grid cell, so symmetric negative margins let it resolve its own width against
@@ -336,8 +358,56 @@ export function HeroV6({
         <div className="min-w-0">
           <ReelWallV6 columns={columns} className={`${WALL_BLEED} ${WALL_HEIGHT}`} debug={debug} />
 
+          {/* CENTRED AT EVERY WIDTH, AND `lap:text-left` IS WHAT WENT. The
+              caption is a label for the wall rather than a line of the hero
+              copy, so it belongs under the middle of the thing it names. Left
+              aligning it above `lap` lined it up with the copy column instead —
+              which put it under the wall's far edge, the one the tilt is
+              already shrinking, and read as a stray line of type that had come
+              loose from the paragraph on the other side.
+
+              text-center ALONE CENTRES IT IN THE COLUMN, WHICH IS NOT THE
+              WALL'S CENTRE, AND THE 5% IS WHAT CLOSES THAT. The stage inside
+              the wall is inset -13% left and 4.5% right, so the box the columns
+              sit in is centred 8.75% left of the column's own centre; the -22
+              degree turn then magnifies the near (right) side and shrinks the
+              far one, which pushes the PROJECTED content back toward the right.
+              The two do not cancel — they leave the clips sitting a little left
+              of centre, and a caption at the column's centre reads as hanging
+              off the near edge of the wall.
+
+              5% IS MEASURED, NOT DERIVED, because the visual centre depends on
+              the projection and no expression of the two insets gives it: the
+              box says 8.75% and the rendered clips say ~5%. Taken on the
+              running page as (clip bounding centre - column centre) / column
+              width: 961 -5.30%, 1100 -4.93%, 1200 -4.63%, 1440 -4.80%, 1700
+              -4.81%, 1920 -5.49%, 2560 -6.99%. Flat at ~5% across the whole
+              range a laptop or monitor actually is, drifting only past ~2200
+              where STAGE's 1920 cap stops the wall growing while the column
+              keeps going.
+
+              A PERCENTAGE OF THE ELEMENT, WHICH IS THE COLUMN. The caption is a
+              block, so its width IS the column's and `-translate-x-[5%]` is 5%
+              of the same quantity the numbers above are a fraction of. It is a
+              transform, so it moves nothing else and costs no layout.
+
+              `tab:` BECAUSE THE ASYMMETRY IS THE 3D STAGE'S. Below that
+              breakpoint there is no stage, no tilt and no insets — the wall is
+              full-bleed rows and its centre IS the column's, so the correction
+              would be a 5% error rather than a fix.
+
+              VERIFIED AFTER THE FACT, same method, residual between the
+              caption's centre and the clips': 390 and 700 land exactly (no
+              correction applies there), 761 +7px, 900 +12px, 961 +2, 1200 -2,
+              1440 -2, 1920 +4, 2560 +20. Everything from `lap` up is inside
+              four pixels; the 2560 figure is the same cap drift the list above
+              shows and is 2% of a wall a metre wide.
+
+              RE-MEASURE IF THE TILT OR EITHER INSET MOVES. An offset that is
+              right for -22 degrees is wrong for -15, and a stale nudge is worse
+              than the misalignment it was added for. */}
           <p
-            className={`mt-[16px] text-center font-mono ${TEXT_META} uppercase tracking-[0.06em] text-ink-faint lap:text-left`}
+            className={`mt-[16px] text-center font-mono ${TEXT_META} uppercase tracking-[0.06em] text-ink-faint tab:-translate-x-[5%]`}
           >
             {content.reels.caption}
           </p>

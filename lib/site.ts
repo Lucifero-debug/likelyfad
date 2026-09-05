@@ -12,6 +12,23 @@ export const SITE_DESCRIPTION =
 /* The parent company, named in the footer. */
 export const PARENT_COMPANY = "Bright Life Creations";
 
+/* THE FULL REEL LIBRARY, linked from the bottom of the work wall.
+
+   PLACEHOLDER — swap for the real Drive folder link. It is the only thing in
+   this feature that cannot be derived from the repo: the wall's clips come from
+   a Drive folder by way of scripts/sync-drive-videos.mjs, but nothing checked in
+   here records WHICH folder, and a link is not something to guess at. Until it
+   is filled in the button points at Drive's own root, which is a dead end for a
+   visitor rather than a wrong destination.
+
+   IT MUST BE A LINK ANYONE CAN OPEN. A folder shared "restricted" sends every
+   visitor to a request-access screen, which is worse than no button at all —
+   set the folder to "anyone with the link can view" before shipping this.
+
+   The `/view` suffix on a Drive folder URL opens the grid of thumbnails rather
+   than the list, which is what a wall of vertical video wants. */
+export const DRIVE_LIBRARY_URL = "https://drive.google.com/"; // PLACEHOLDER — the real folder link goes here
+
 /* Contact CTA → opens the X (Twitter) profile in a new tab. */
 export const X_HANDLE = "amanxdesign";
 

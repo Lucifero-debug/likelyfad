@@ -6,11 +6,13 @@ import { takeReels } from "@/lib/reelOrder";
 import { HOT } from "@/lib/useInViewPlay";
 import { useLeanRowLength } from "@/lib/useLeanWall";
 import type { Reel } from "@/lib/reels.generated";
+import { Button } from "@/components/ui/Button";
 import { LazyVideo } from "@/components/ui/LazyVideo";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { MotionToggle } from "@/components/ui/MotionToggle";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { DRIVE_LIBRARY_URL } from "@/lib/site";
 import { ANCHOR, HEAD_GAP, SECTION, TEXT_META, WRAP } from "@/lib/ui";
 
 const { work } = content;
@@ -505,7 +507,50 @@ export function Work() {
         />
       </div>
 
-      <div className={`${WRAP} mt-6 flex justify-end`}>
+      {/* THE ONE CONTROL ON THIS BAND, AND IT IS THE END OF THE SCROLL RATHER
+          THAN AN INTERRUPTION IN IT. The wall answers "is this real"; a visitor
+          who is convinced by it has nowhere to go next except past the section,
+          so the ask belongs under the evidence and after all three rows rather
+          than beside the heading.
+
+          `light`, NOT `grad`. The gradient is the page's primary action and it
+          is spent twice already in the hero, and a second gradient pill on a
+          dark band would read as the same button repeated rather than a
+          different offer. A white pill on this ground is the only variant that
+          is unmissable without competing: `dark` and `ghost` both paint ink on
+          near-black and disappear.
+
+          THE GAP MIRRORS HEAD_GAP, deliberately — clamp(32,4.5vw,64) above the
+          CTA is the same air the heading block leaves below itself, so the wall
+          sits in a band with matched margins instead of being top-heavy. Both
+          ends are rungs on the scale in lib/ui.ts. It is spelled out rather
+          than imported because HEAD_GAP is a `mb-` and Tailwind scans source
+          TEXT, so a class built by swapping the prefix at runtime is never
+          generated — the same reason the perspective and the lane speeds are
+          literals.
+
+          `items-center` in a column: the toggle, if it ever comes back, stacks
+          under the CTA rather than beside it. It used to sit alone at the right
+          edge, which is the right place for a utility control and the wrong
+          place for the section's ask. */}
+      <div
+        className={`${WRAP} mt-[clamp(32px,4.5vw,64px)] flex flex-col items-center gap-4`}
+      >
+        <Reveal>
+          <Button
+            href={DRIVE_LIBRARY_URL}
+            /* EXTERNAL, so the tab that opens cannot navigate this one — see
+               the note on the prop. It is also the reason this is not a plain
+               <a>: the rel is the half that gets forgotten. */
+            external
+            variant="light"
+            withArrow
+            ariaLabel={work.ctaAria}
+          >
+            {work.cta}
+          </Button>
+        </Reveal>
+
         {/* <MotionToggle
           paused={paused}
           onToggle={() => setPaused((p) => !p)}

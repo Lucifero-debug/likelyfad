@@ -219,15 +219,47 @@ const AMBIENT_DURATION: string[] = AMBIENT_SECONDS.map((n) => `${n}s`);
    decoding, compositing and holding memory, for identical output. Nothing else
    in here scales like this number.
 
-   THE REQUIREMENT IS CHECKED AT THE WORST VIEWPORT, NOT THE TYPICAL ONE. The
-   binding case is a phone held wide — around 760px, right below `tab`, where
-   the wall is ~684px across. Four clips have to beat that on their own, which
-   is what sets the floor under the clip clamp: 22vw lands them at ~167px there,
-   for a 732px set. Narrow that clamp and the copies have to come back.
+   THE REQUIREMENT IS CHECKED AT THE WORST VIEWPORT, NOT THE TYPICAL ONE, AND
+   THERE ARE TWO OF THEM — one at each end of the range, on different axes.
+
+   AND THE COPIES CAME BACK, BECAUSE THE CLIPS ARE NOW WORK'S SIZE. The note
+   above always warned that narrowing the clip clamp would cost this number, and
+   matching the work wall narrowed it on both axes at once: 24vw -> 33vw capped
+   at 146 in a row, and a full column -> 158px capped in a column. A shorter clip
+   is a shorter set, and the set is the whole margin. Measured on the running
+   page at twelve viewports, two sets left two bands broken:
+
+     ROW, 615-760px    set 618-621 against a container of 700-760. Four clips at
+                       146 + 12 cannot span a full-bleed viewport that wide; the
+                       old 24vw could because it was still ~182px there.
+     COLUMN, 1615px+   set 1172 against a container of 1243. The container stops
+                       growing (WALL_HEIGHT's 888 cap, x1.4 for the cell's
+                       -inset-y-20%) but so does the set, and at Work's 158px cap
+                       the set stops 71px short of where it has to be.
+
+   Everything between held: 390-614 in a row, and 961-1440 in a column, where the
+   container is still climbing with the viewport rather than sitting on its cap.
+
+   THREE FIXES BOTH, WITH ROOM. `(3-1) x set` is 1242 against 760 in the row band
+   and 2344 against 1243 in the column band. IT IS ALSO THE COMPONENT'S BIGGEST
+   SINGLE COST, restated from the other direction: this is four more <video> per
+   lane, 32 elements to 48. That is the price of the smaller clips and it is not
+   hidden anywhere else.
+
+   TWO WAYS TO SPEND THE SAME TWELVE ELEMENTS PER LANE, if this is ever revisited.
+   Three sets of four shows sixteen distinct reels and fetches sixteen files; two
+   sets of six (PER_COLUMN in lib/v8/data.ts, which the library has 68 reels to
+   feed) shows twenty-four and fetches twenty-four. This file takes the first
+   because the extra eight files are eight more cold fetches on a page whose
+   video loading is the thing being protected — not because the repetition is
+   better. THE THIRD WAY AVOIDS THE COST ENTIRELY and is a design decision rather
+   than a knob: lower WALL_HEIGHT's 888 cap to ~837, and the column container
+   stops below the set without any extra copies. It makes the hero wall shorter
+   on a large display, which is why it is named here and not taken.
 
    `debug` prints the two numbers it is checking, and says SET TOO SHORT if the
    relationship ever stops holding. */
-const COLUMN_SETS = [2, 2, 2, 2];
+const COLUMN_SETS = [3, 3, 3, 3];
 
 /* ---------------------------------------------------------------------------
    THE 3D STAGE — what turns four drifting columns into a gallery with depth.
@@ -276,12 +308,26 @@ const COLUMN_SETS = [2, 2, 2, 2];
    truth and can drift from the class without anything failing. The numbers live
    in the class, and the note there explains what they are for. */
 
-/* The 16px between clips is a MARGIN on the clip itself, and it has to switch
-   axis with the lane — bottom in a column, right in a row — so it is a pair of
-   responsive classes rather than a constant. Same reasoning as the perspective
-   and the stage overhang: Tailwind scans source text, a class built from a
-   variable is never generated, and a constant that is not the value in effect
-   only invites drift. It is on the spacing scale either way. */
+/* The clamp(8px,1.2vw,12px) between clips is a MARGIN on the clip itself, and
+   it has to switch axis with the lane — bottom in a column, right in a row — so
+   it is a pair of responsive classes rather than a constant. Same reasoning as
+   the perspective and the stage overhang: Tailwind scans source text, a class
+   built from a variable is never generated, and a constant that is not the
+   value in effect only invites drift.
+
+   THE VALUE IS THE WORK WALL TRACK GAP, character for character — see the
+   `gap-[clamp(8px,1.2vw,12px)]` on both the row track and the row stack in
+   components/sections/Work.tsx. It is a margin here and a gap there for the
+   reason below, but it resolves to the same number at every width, which is
+   what makes the two walls read as one system rather than two.
+
+   IT IS STILL A MARGIN AND NOT THE PARENT GAP, and that has not stopped being
+   load bearing just because the number now matches a gap elsewhere. The lane is
+   a marquee whose wrap arithmetic is `100% / --sets`, and a flex `gap` is drawn
+   BETWEEN items rather than after each one — so the last clip of a set carries
+   no trailing space and the seam shows once a cycle. A margin on every clip
+   makes every clip the same size including its spacing, which is the only way
+   the modulo lands. */
 
 export type ReelClip = {
   src: string;
@@ -346,40 +392,43 @@ function Clip({
          with the lane: a bottom margin in a row would push the clip out of its
          track instead of separating it from the next one.
 
-         WIDTH IS EXPLICIT IN A ROW, DERIVED IN A COLUMN. Stacked in a column a
-         clip takes the column's width and the aspect box gives it a height.
-         Laid out in a row there is nothing to take a width from — a flex item
-         with only an aspect ratio collapses — so the phone layout states it and
-         lets the aspect box give the HEIGHT, which is then what sets the row's
-         height. That makes this clamp the control for how tall the whole phone
-         wall is: at 88px a clip is 156px tall and three rows come to ~500px.
+         BOTH CLAMPS ARE THE WORK WALL'S, CHARACTER FOR CHARACTER, and that is
+         the point of them rather than a coincidence to be tidied up later. See
+         TILE in components/sections/Work.tsx: clamp(112px,33vw,146px) in a row,
+         clamp(116px,12vw,158px) from `tab` up, on the same 9:16 box. The two
+         walls are the same footage at two places on one page, and a visitor
+         scrolling from one to the other was being shown it at two sizes with
+         two spacings. If either clamp moves, move the other with it — they are
+         one measurement in two files, the same deal WALL_HEIGHT has with the
+         section paddings it is derived from.
 
-         SHRINKING THIS COSTS VIDEO ELEMENTS, WHICH IS NOT OBVIOUS. A narrower
-         clip is a shorter SET, and the set is what has to outlast the wall's
-         width at the wrap — so past a point the only way to keep the loop
-         seamless is to carry another copy of every clip, which is four more
-         <video> per lane. That is the trade this clamp is really making: at
-         20vw/124px the wall needed 60 elements, at 22vw/168px it needed 44.
-         Actual phones barely notice the difference (84px against 88px at 390);
-         it is tablets in portrait that get the wider clips.
+         WIDTH IS NOW EXPLICIT ON BOTH AXES, AND IT USED TO BE DERIVED IN A
+         COLUMN. Stacked in a column a clip took `w-full` — whatever quarter of
+         the stage the grid handed it — which is exactly what made the desktop
+         clips bigger than the work wall's and made the space between columns
+         whatever was left over rather than a number anybody chose. Stating the
+         width lets the grid stop distributing space it does not have to: the
+         stage columns are `max-content` now, so what sits between them is the
+         cell padding and nothing else. In a row the width was always explicit
+         and had to be — a flex item with only an aspect ratio collapses.
 
-         24vw, AND THE FULL-BLEED WALL IS WHY. The wall now cancels STAGE's
-         padding below `tab` (see WALL_BLEED in HeroV6), so the width the set
-         has to outlast is the WHOLE VIEWPORT rather than the viewport less
-         48-76px. Four clips at `w + 16` have to span V, so `w >= 0.25V - 16`:
-         at 22vw that held to ~533px wide and then quietly stopped, which is
-         inside the range this layout covers. At 24vw the worst case in the
-         whole band is 760px, where a set measures 794 against a 760 viewport —
-         34px of margin, and the margin only grows as the screen narrows (48px
-         at 390, 96px at 320). The cap moved 168 -> 184 for the same reason: it
-         binds from ~767px up, which is above `tab`, so it never actually
-         governs here — it is kept in step so the clamp reads as one ramp.
+         SHRINKING THIS COSTS VIDEO ELEMENTS, WHICH IS NOT OBVIOUS, AND THIS
+         CHANGE PAID IT. A narrower clip is a shorter SET, and the set is what
+         has to outlast the lane container at the wrap — so past a point the
+         only way to keep the loop seamless is to carry another copy of every
+         clip, which is four more <video> per lane. Matching Work took the row
+         clip from ~182px to 146 at the wide end and the column clip from ~171px
+         to 158, and both crossed the line: COLUMN_SETS went 2 -> 3 and the wall
+         went from 32 media elements to 48. The measurements, and the two
+         viewport bands that broke, are in the note on COLUMN_SETS. Do not
+         narrow either clamp again without re-running them.
 
-         THE FLOOR DID NOT MOVE, so nothing changes at all below ~367px wide.
-         Between there and `tab` clips are ~9% wider than they were, which is
-         also ~9% more wall height: three rows of a 9:16 box. That is the visible
-         cost of the bleed, and it is paid in the direction the bleed wanted
-         anyway — bigger footage on the one device where the wall IS the page.
+         THE FLOOR WENT UP, WHICH IS THE ONE PLACE THIS IS FREE. Work has a
+         112px row floor against the 88px this used to carry, so a 390px phone
+         goes from ~94px clips to ~129px — the wall is BIGGER by 37% on the
+         device where it IS the page. The whole cost lands at the wide end of
+         the row band and the top of the column band, which is the other end
+         from the one that mattered.
 
          THE HOVER GROWS THE CARD AND RAISES IT OVER ITS NEIGHBOURS. transform
          and opacity only: those composite, where a width or a box-shadow would
@@ -387,7 +436,7 @@ function Clip({
          z-10 is what lets the magnified card overlap the clips above and below
          instead of being painted under them. Horizontal room for it comes from
          the cell's padding — see the grid. */
-      className="group relative aspect-[9/16] w-[clamp(88px,24vw,184px)] mr-[16px] flex-none cursor-pointer overflow-hidden rounded-[12px] bg-poster transition-[scale] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] hover:z-10 hover:scale-[1.06] focus-visible:z-10 focus-visible:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cue active:scale-[1.02] tab:mr-0 tab:mb-[16px] tab:w-full"
+      className="group relative aspect-[9/16] w-[clamp(112px,33vw,146px)] mr-[clamp(8px,1.2vw,12px)] flex-none cursor-pointer overflow-hidden rounded-[12px] bg-poster transition-[scale] duration-[280ms] ease-[cubic-bezier(0.22,0.7,0.2,1)] hover:z-10 hover:scale-[1.06] focus-visible:z-10 focus-visible:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cue active:scale-[1.02] tab:mr-0 tab:mb-[clamp(8px,1.2vw,12px)] tab:w-[clamp(116px,12vw,158px)]"
     >
       {/* preload="none" AND no src until the tile is near — LazyVideo owns
           both, and useInViewPlay still owns playback. `metadata` here once
@@ -592,6 +641,32 @@ export function ReelWallV6({
          which is below the threshold where the eye reads "angled" at all. It
          was a very long lens on a very small subject. */
       className={`relative overflow-hidden tab:[perspective:900px] ${className}`}
+      /* THE EDGE FADES, AND THEY ARE A MASK RATHER THAN ANYTHING PAINTED — see
+         the long note above the Lightbox for why that distinction is the whole
+         fix. Inline rather than in `className` because Tailwind scans source
+         TEXT: an arbitrary value carrying a comma-separated gradient list does
+         not survive the scan, so a class built from this would silently never
+         be generated. Same reason --sets and --lane-secs are inline on the lane.
+
+         BOTH PREFIXED AND UNPREFIXED, AND THE COMPOSITE KEYWORDS DIFFER. Safari
+         still wants -webkit-mask-*, and its composite vocabulary is the old
+         Porter-Duff one where `source-in` means what the standard spells
+         `intersect`. They are not duplicates of each other and collapsing them
+         to one pair drops the fade on Safari or drops it everywhere else. */
+      style={
+        {
+          "--fade-x": "clamp(40px, 7%, 130px)",
+          "--fade-y": "clamp(32px, 6%, 96px)",
+          WebkitMaskImage:
+            "linear-gradient(to right, #0000 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), #0000 100%), " +
+            "linear-gradient(to bottom, #0000 0, #000 var(--fade-y), #000 calc(100% - var(--fade-y)), #0000 100%)",
+          maskImage:
+            "linear-gradient(to right, #0000 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), #0000 100%), " +
+            "linear-gradient(to bottom, #0000 0, #000 var(--fade-y), #000 calc(100% - var(--fade-y)), #0000 100%)",
+          WebkitMaskComposite: "source-in",
+          maskComposite: "intersect",
+        } as CSSProperties
+      }
     >
       {/* The columns are one object; the split between copy and wall is the real
           division on the page. Hence 16 here against the 48/64 the hero uses. */}
@@ -671,7 +746,7 @@ export function ReelWallV6({
           now that the tilt runs right-to-left. */}
       <div
         ref={stage}
-        className="grid grid-rows-3 gap-0 tab:absolute tab:-left-[13%] tab:right-[4.5%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-4 tab:[transform:rotateY(-22deg)_rotateX(4deg)]"
+        className="grid grid-rows-3 gap-0 tab:absolute tab:-left-[13%] tab:right-[4.5%] tab:-inset-y-[20%] tab:h-auto tab:grid-rows-1 tab:grid-cols-[repeat(4,max-content)] tab:justify-center tab:[transform:rotateY(-22deg)_rotateX(4deg)]"
       >
         {columns.map((column, c) => {
           const sets = COLUMN_SETS[c];
@@ -692,6 +767,17 @@ export function ReelWallV6({
                  runs past the bottom of its cell, and without a clip here that
                  overhang paints across the grid gap into its neighbour.
 
+                 THE COLUMNS ARE max-content, NOT FOUR EQUAL FRACTIONS. With
+                 the clip width stated rather than inherited, `grid-cols-4`
+                 would hand each column a quarter of the stage and leave the
+                 clip sitting in whatever was left over — a horizontal gap of
+                 30-40px that no line of this file chose, against a vertical gap
+                 of 12 that it did. Columns that hug their clips make the two
+                 gaps the same number, which is the whole point of matching the
+                 work wall. `justify-center` then centres the four of them in
+                 the stage box, which is what the -13%/4.5% insets used to get
+                 by stretching.
+
                  THE CELL CARRIES NO TRANSFORM OF ITS OWN, and that is what
                  keeps the wall clickable — see the note at the head of the file
                  on why preserve-3d and this element's overflow: hidden cannot
@@ -701,10 +787,17 @@ export function ReelWallV6({
                  card scaled up against a cell sized exactly to it gets sliced
                  at both edges — the magnification would read as a rendering
                  fault. Half the gap as padding on each of two neighbours is the
-                 same 16px between columns it was before, and now 8px of it is
-                 inside the clip rather than between them. Block padding on the
-                 phone, where the lanes are rows and the growth is vertical. */
-              className={`relative overflow-hidden py-[8px] tab:px-[8px] tab:py-0 ${
+                 full gap between columns, and half of it is inside the clip
+                 rather than between them. Block padding on the phone, where the lanes
+                 are rows and the growth is vertical.
+
+                 IT IS HALF THE CLIP MARGIN AND IT TRACKS IT. The clips carry
+                 Work clamp(8px,1.2vw,12px) now, so this is exactly half of that
+                 at every width — which is what makes the space between two
+                 columns equal the space between two clips inside a lane, on
+                 both axes, the way the work wall single `gap` gets for free.
+                 Move the clip margin and move this with it. */
+              className={`relative overflow-hidden py-[clamp(4px,0.6vw,6px)] tab:px-[clamp(4px,0.6vw,6px)] tab:py-0 ${
                 c > 2 ? "hidden tab:block" : ""
               }`}
             >
@@ -811,33 +904,85 @@ export function ReelWallV6({
         })}
       </div>
 
-      {/* NO TOP OR BOTTOM FADES EITHER. There were two here — a 64px paper
-          ramp at each end from `tab` up, on the reasoning that a lane sliced
-          by the crop reads as a bug where a faded one reads as the columns
-          continuing past the frame. They read as a shadow across the top and
-          bottom of the section instead, which is the same objection that
-          removed the side pair below, so the wall now has no gradients at all
-          and every edge is a clean cut.
+      {/* THE FADES ARE BACK ON ALL FOUR EDGES, AS A MASK ON THE BOX. The mask
+          itself is on the outer div at the top of this return; this is the note
+          that explains why it is written the way it is, and why the last two
+          attempts at the same effect were deleted.
 
-          WHAT THAT COSTS: the lanes visibly enter and leave at the crop. If
-          that ever needs softening again the fix is the stage geometry above —
-          the inset/overhang pair — not a gradient back here. --fade-stops is
-          still defined page-wide for the bands that do use it. */}
+          WHAT WAS HERE BEFORE, AND WHY IT WENT. Two pairs of absolutely
+          positioned gradient divs — a 64px paper ramp at the top and bottom
+          from `tab` up, and a 3%/6% pair down the left and right — on the sound
+          reasoning that a lane sliced by the crop reads as a bug where a faded
+          one reads as the wall continuing past the frame. The reasoning was
+          right and the mechanism was wrong. They read as a SHADOW across the
+          top, the bottom and both sides of the section, and both pairs were
+          removed for it.
 
-      {/* NO SIDE FADES ON DESKTOP, DELIBERATELY. There were two here — a 3%
-          ramp on the left and 6% on the right — softening the edges the tilted
-          plane is cropped by, on the reasoning that a sliced column reads as a
-          bug where a faded one reads as the wall continuing past the frame.
-          They read as a shadow down both sides of the section instead, so they
-          are gone and the crop is a clean cut.
+          AN OVERLAY ADDS COLOUR. A MASK SUBTRACTS THE WALL. That sentence is
+          the entire fix. Those divs painted paper-coloured pixels ON TOP of the
+          clips, so at the midpoint of the ramp the compositor was mixing 50%
+          paper with a dark video frame — and paper over dark is grey. Grey
+          sitting in a band along an edge is a shadow; there is no way to tune a
+          painted scrim out of that, because the greyness IS the ramp doing its
+          job. A mask never introduces a colour at all. It removes alpha from
+          the wall's own pixels, so the clips dissolve to genuinely nothing and
+          the page shows through them unmixed. On paper the fade now reads as
+          paper, and it would read as correct on any ground the section is ever
+          given, which a paper-keyed gradient could not.
 
-          WHAT THAT COSTS, if either edge ever looks wrong again: the overhang
-          on the far side of the tilt is still there (a plane turned 22 degrees
-          has to be wider than its frame to still reach the far edge once it
-          recedes), so the far column IS sliced — it is just sliced sharply now.
-          The fix is the inset/overhang pair on the stage above, not a gradient
-          back here. The top/bottom pair went the same way for the same reason —
-          see the note above it. */}
+          IT IS ALSO WHAT THE REFERENCE ACTUALLY DOES. The Framer component this
+          wall is being matched to exposes Fade Size, Fade Intensity and
+          Background Colour as three separate controls; the third is the tell
+          that it composites against a ground it owns. This wall does not own its
+          ground — it sits on the page's paper with the hero copy beside it and a
+          caption under it — so the equivalent has to be subtractive rather than
+          composited against a colour.
+
+          --fade-x AND --fade-y ARE THE SIZE DIAL, which is the reference's Fade
+          Size. They are clamps rather than constants so the ramp stays
+          proportionate: a 7% inset is a soft suggestion on a 1920 wall and would
+          swallow a phone row whole, hence the 40px floor and the 130px ceiling,
+          and the vertical pair is smaller because the wall is shorter than it is
+          wide. Raise them for more dissolve, lower them for more wall.
+
+          FADE INTENSITY IS THE END STOP, NOT A SECOND VARIABLE. Both gradients
+          run to `#0000`, which clears the edge completely. Changing that end
+          stop to something like `rgb(0 0 0 / 0.25)` leaves a quarter of the wall
+          standing at the extreme edge — the reference's Fade Intensity, spelled
+          as the thing it actually is. Do that in all four places or the edges
+          stop matching each other.
+
+          TWO GRADIENTS COMPOSITED, BECAUSE ONE CANNOT DO FOUR EDGES. A single
+          linear-gradient runs on one axis. The horizontal pair and the vertical
+          pair are intersected, so a pixel survives only where BOTH say it
+          should — which is what rounds the corners of the fade instead of
+          leaving the two ramps fighting over them.
+
+          IF preserve-3d EVER COMES BACK TO THE STAGE, THIS MASK KILLS IT
+          SILENTLY. The note at the head of this file records that per-column
+          depth wants `transform-style: preserve-3d` on the grid, and that the
+          grid carries one flat 3D transform instead. A mask on an ancestor
+          forces that subtree to be rendered into a single group before it is
+          composited — which flattens it. So the depth ramp would not error, it
+          would just quietly stop existing, exactly the failure mode the head of
+          this file warns about for `overflow` doing the same thing. Anyone
+          reintroducing preserve-3d has to move this mask down onto the cells or
+          give up one of the two.
+
+          THE INSET/OVERHANG PAIR WAS TUNED AGAINST A HARD CROP AND MAY WANT
+          REVISITING. -13% on the left and 4.5% on the right exist because a
+          plane turned -22 degrees over-reaches the frame on its near side and
+          falls short on its far one, and both numbers were solved for edges
+          that were being sliced SHARPLY — the goal was for the crop to land in a
+          place that did not look like a mistake. The crop is soft now, which
+          changes what those numbers are optimising for: an edge that dissolves
+          can afford to be cropped somewhere a hard edge could not, and the
+          overhang may now be buying margin nobody can see. Re-solving them is a
+          separate job from this one and has not been done.
+
+          --fade-stops in globals.css is untouched and still belongs to the bands
+          that paint a real gradient. It is the right tool for those and the
+          wrong one here, which is the whole point of this note. */}
 
       {/* THE OVERLAY. Everything about opening a clip is already solved here —
           it portals to the body, autoplays the HQ cut with audio, traps focus on

@@ -94,6 +94,19 @@ export const content = {
        tile labels would be noise — so one sentence stands in for all of it. */
     description:
       "A reel of dozens of AI-generated ads across different products and sectors. None of them were filmed.",
+    /* THE CTA UNDER THE WALL. The wall is a sample that never stops moving, so
+       there is no way to sit with one clip or to see how much there is; the
+       library is both. Naming Drive rather than saying "see more" is the point
+       of the label — a visitor about to leave the page for Google should be
+       told that is where they are going before they click, not after.
+
+       No claim about how many. The folder's contents change with every sync and
+       a number here would be wrong the first time one ran. */
+    cta: "See the full library on Drive",
+    /* Spoken instead of the label, because "opens in a new tab" is the part a
+       screen reader user needs BEFORE following the link and the part a sighted
+       one can infer from the icon. */
+    ctaAria: "See the full reel library on Google Drive, opens in a new tab",
   },
 
   pricing: {
